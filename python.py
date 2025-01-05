@@ -7,3 +7,4 @@ def dotprod(np.array(x1),np.array(x2)):
 
 
 
+
