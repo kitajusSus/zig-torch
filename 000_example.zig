@@ -21,7 +21,8 @@ fn mm(A: []const f32, B: []const f32, I: usize, J: usize, K: usize) ![]const f32
     }
     return C;
 }
-
+//ONLY FOR TERSTING
+//
 pub fn main() !void {
     const cos: [2 * 3]f32 = [_]f32{1, 2, 3, 4, 5, 6}; // 2x3 matrix
     const inne: [3 * 2]f32 = [_]f32{1, 2, 3, 4, 5, 6}; // 3x2 matrix
