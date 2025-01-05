@@ -1,13 +1,12 @@
-const std = @import("std")
+const std = @import("std");
 
 
 /// Multiplications of two marices
 
-fn mm( A: [*]const f32, B: [*]const f32 ) !f32 {
-    const I: u16;
-    const J: u16;
-    const K: u16;
-    var C: []f32 = 0;
+fn mm( A: [*]const f32, B: [*]const f32,  I: usize, J: usize,  K: usize ) ![]f32 {
+    const allocator = std.heap.page_allocator;
+    var C = try allocator.alloc(f32, I*J);
+    defer allocator.free(C);
     var i: usize = 0;
     while (i<I) : (i += 1) {
         var j: usize = 0;
@@ -15,15 +14,18 @@ fn mm( A: [*]const f32, B: [*]const f32 ) !f32 {
             var sum: f32 = 0;
             var k: usize = 0;
             while (k<K) : (k+=1){
-                sum += A[i * K + k] *  B[k*J +j];
+                sum += A[i * K + k] *  B[k*J + j];
             } 
-            C[i*N + j] = sum; 
+            C[i*J + j] = sum; 
         }
     }
     return C;
 }
 
-pub fn main() void {
-
+pub fn main() !void {
+    const cos: [2*3]f32 = [_]f32{1, 2, 3, 4, 5, 6};
+    const inne: [3*2]f32 = [_]f32{1, 2, 3, 4, 5, 6};
+    const wynik = try mm(cos[0..], inne[0..],2,2,3) catch unreachable;
+    std.debug.print("C: {d}\n", .{wynik});
 
 }
