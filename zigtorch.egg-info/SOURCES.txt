@@ -1,0 +1,8 @@
+LICENSE
+README.md
+setup.py
+zig_ops.cpp
+zigtorch.egg-info/PKG-INFO
+zigtorch.egg-info/SOURCES.txt
+zigtorch.egg-info/dependency_links.txt
+zigtorch.egg-info/top_level.txt
