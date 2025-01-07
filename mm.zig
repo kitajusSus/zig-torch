@@ -1,24 +1,26 @@
-// japierdole kocham zig i ziggersów
+// japierdole kocham zig
 const std = @import("std");
 
 /// Rozmiar bloku do cache blocking:
-/// - 64 bywa dobrym punktem startowym, ale warto testować 32, 128, itp.
+/// - 64 defaultowo, ale warto testować 32, 128, itp.
 pub const BlockSize = 64;
 fn getCpuCount() usize {
     // std.os.sysconf(.nprocessors_onln) zwraca !i64, więc obsługujemy błąd przez `catch`.
     // Jeśli wystąpi błąd -> używamy -1.
     //const raw_count = std.os.sysconf(.nprocessors_onln) catch -1;
-
+    // na początku myslałem ze to ma sens ale juz pogodze sie z faktem ze bedzie stale 4 rdzenie wykorzystywać
+    // *DO POPRAWY*
     // Jeśli raw_count jest <= 0, ustawiamy 1:
     //if (raw_count < 1) {
         return 4;
     //} else {
-        // Tutaj powinna zadziałać wbudowana funkcja @intCast(typ, wartość).
-        // Jeśli nadal masz komunikat 'expected 1 argument, found 2',
-        // sprawdź, czy nie masz konfliktu nazw w kodzie lub błędu składni wyżej.
+        // Tutaj powinna zadziałać wbudowana funkcja @intCast(typ, wartość) ale intcast niedziała trzeba szukać rozwiązania bo do kurwy nedzy .
+       
       //  return @as(usize, @intCast(raw_count));
     //}
+    //
 }
+//pracuś bedzie robił robote i nosił bloki w kopalni
 fn worker(
     start_i: usize,
     end_i: usize,
@@ -30,18 +32,23 @@ fn worker(
     K: usize,
 ) void {
     // Przechodzimy "po blokach" w wymiarze i, j, k.
-    // Wewnątrz pętli robimy unrolling w wymiarze k.
-    _ = M;
+    // wzorowałem się na metodzie `cache blocking` lub `loop blocking`, czyli podział macierzy na mniejsze macierze (blocki) które mieszczą się wygodnie w ram procesora (cache) 
+    // rozmiar bloku defaulotowo jest ustawione na 64 look at BlockSize [musi byc to liczba  2^n] 
+    // Wewnątrz pętli robimy unrolling w wymiarze k. czyli petla po literze k jest rozpakowywana w celu zmniejszenia liczby potrzebnych iteracji i do tego stosowana jest nasza wielowątkowosc która ustawiłem na 4, sumuje 4 elementy na raz i zwieksza wydajnosc. 
+    _ = M; // wyrzucało blad, wiec zrobiłem pusta zmienna 
     var i: usize = start_i;
+    // petla po i czyli ilosc kolumn w macierzy A
     while (i < end_i) : (i += BlockSize) {
         var j: usize = 0;
+        //petla po j czyli ilosc wierszy A i ilosc kolumn B
         while (j < N) : (j += BlockSize) {
             var k: usize = 0;
+            //petla k czyli ilosc wierszy B ponieważ macierze wcale nie musza być kwadratami, 
             while (k < K) : (k += BlockSize) {
-                const i_end = @min(i + BlockSize, end_i);
+                const i_end = @min(i + BlockSize, end_i); //@min zwraca mniejsza wartosc z tych 2 tak by nie uciec po za macierz bo po co liczyć cos co mnie nie interesuje?
                 const j_end = @min(j + BlockSize, N);
                 const k_end = @min(k + BlockSize, K);
-
+                
                 var ii: usize = i;
                 while (ii < i_end) : (ii += 1) {
                     const rowA = ii * K;
@@ -51,7 +58,7 @@ fn worker(
                     while (jj < j_end) : (jj += 1) {
                         var sum: f32 = 0.0;
                         var kk: usize = k;
-                        // Tu zaczynamy unrolling w pętli "po K":
+                        // Tu zaczynamy unrolling tzw: rozpakowywanie w pętli "po K":
                         const length = k_end - k;
                         const unroll4 = length - (length % 4);
 
@@ -69,7 +76,8 @@ fn worker(
                         }
 
                         // Dodajemy wynik do C (być może w C już coś było, więc +=)
-                        // Jeśli chcesz nadpisać (zamiast dodawać) użyj: C[rowC + jj] = sum;
+                        // mozna albo nadpisać albo dodawać
+                        // widze roznice w logice i chyba -> jest logiczniejsze ale nie wiem C[rowC + jj] = sum;
                         C[rowC + jj] += sum;
                     }
                 }
@@ -87,8 +95,8 @@ export fn zig_mm(
     N: usize,
     K: usize,
 ) callconv(.C) void {
-    const thread_count = getCpuCount();
-    var handles: [4]?std.Thread = undefined;
+    const thread_count = getCpuCount(); //defaultowo 4
+    var handles: [thread_count]?std.Thread = undefined;
 
     const chunk_size = (M + thread_count - 1) / thread_count;
 
