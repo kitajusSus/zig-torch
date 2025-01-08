@@ -1,3 +1,6 @@
+# important 7.01.2025
+sorry guys for the confusion i could make with my reddit post about this repository. It has right now a lot of mistakes and now I am trying to fix this. 
+
 # zig-pytorch
 As a man who is trying to understand zig and write usefull code in other language than python (or try to write something usefull), I get an idea of creating something what is using zig to optize pytorch, make is faster, more reliable. I don't know if it's going to work, but I need to do it my own as a motivation do study. 
 # I've seen this in my dream

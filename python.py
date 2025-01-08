@@ -5,6 +5,7 @@ import time
 import random
 
 cuda = torch.device('cuda')
+torch.set_num_threads(4)
 # Generating random size of a 2D tensor (matrix)
 I = random.randint(1000, 10000)
 J = random.randint(1000, 10000)
@@ -13,7 +14,7 @@ print(f"I={I}, J={J}, K={K}. Random size in range 1000-10000")
 
 matrix_size1 = (I, J)
 matrix_size2 = (J, K)
-print("a")
+
 # Test for multiplying 
 def pytorch_test(A, B, n):
     print("Number of matrices for pytorch:", n)
@@ -50,11 +51,11 @@ def move_to_cuda(matrices):
 
 # Generate matrices
 aa, ba = generate_matrices(matrix_size1, matrix_size2, 100)
-print("b")
+
 # Move matrices to CUDA for PyTorch test
 aa_cuda = move_to_cuda(aa)
 ba_cuda = move_to_cuda(ba)
-print("c")
+
 # Run tests
 pytorch_total_time, pytorch_times = pytorch_test(aa, ba, 100)
 zigtorch_total_time, zigtorch_times = zig_mm(aa, ba, 100)
