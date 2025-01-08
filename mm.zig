@@ -1,6 +1,31 @@
 const std = @import("std");
 pub const BlockSize = 64;
 
+fn worker(
+    start_i: usize,
+    end_i: usize,
+    A: [*]const f32,
+    B: [*]const f32,
+    C: [*]f32,
+    N: usize,
+    K: usize,
+) void {
+    std.debug.print("Worker started: {d}-{d}\n", .{start_i, end_i});
+    
+    var i: usize = start_i;
+    while (i < end_i) : (i += 1) {
+        for (0..N) |j| {
+            var sum: f32 = 0.0;
+            for (0..K) |k| {
+                sum += A[i * K + k] * B[k * N + j];
+            }
+            C[i * N + j] = sum;
+        }
+    }
+    
+    std.debug.print("Worker finished: {d}-{d}\n", .{start_i, end_i});
+}
+
 export fn zig_mm(
     A: [*]const f32,
     B: [*]const f32,
@@ -9,47 +34,36 @@ export fn zig_mm(
     N: usize,
     K: usize,
 ) callconv(.C) void {
-    var i: usize = 0;
-    while (i < M) : (i += BlockSize) {
-        var j: usize = 0;
-        while (j < N) : (j += BlockSize) {
-            var k: usize = 0;
-            while (k < K) : (k += BlockSize) {
-                const i_end = @min(i + BlockSize, M);
-                const j_end = @min(j + BlockSize, N);
-                const k_end = @min(k + BlockSize, K);
+    std.debug.print("Starting multiplication: {d}x{d} * {d}x{d}\n", .{M, K, K, N});
 
-                var ii: usize = i;
-                while (ii < i_end) : (ii += 1) {
-                    const rowA = ii * K;
-                    const rowC = ii * N;
-                    
-                    var jj: usize = j;
-                    while (jj < j_end) : (jj += 1) {
-                        var sum: f32 = 0.0;
-                        var kk: usize = k;
-                        
-                        // Dodajemy loop unrolling
-                        const unroll_factor = 4;
-                        const remaining = k_end - k;
-                        const unroll_limit = k + (remaining - (remaining % unroll_factor));
-                        
-                        while (kk < unroll_limit) : (kk += unroll_factor) {
-                            sum += A[rowA + kk] * B[kk * N + jj] +
-                                  A[rowA + kk + 1] * B[(kk + 1) * N + jj] +
-                                  A[rowA + kk + 2] * B[(kk + 2) * N + jj] +
-                                  A[rowA + kk + 3] * B[(kk + 3) * N + jj];
-                        }
-                        
-                        // Pozostałe elementy
-                        while (kk < k_end) : (kk += 1) {
-                            sum += A[rowA + kk] * B[kk * N + jj];
-                        }
-                        
-                        C[rowC + jj] = sum;
-                    }
-                }
-            }
+    const thread_count: usize = 2;
+    var handles: [2]?std.Thread = undefined;
+
+    const chunk_size = M / thread_count;
+    
+    for (0..thread_count) |t| {
+        const start_i = t * chunk_size;
+        const end_i = if (t == thread_count - 1) M else (t + 1) * chunk_size;
+        
+        std.debug.print("Spawning thread {d}: {d}-{d}\n", .{t, start_i, end_i});
+        
+        handles[t] = std.Thread.spawn(
+            .{},
+            worker,
+            .{ start_i, end_i, A, B, C, N, K }
+        ) catch |err| {
+            std.debug.print("Thread spawn failed: {}\n", .{err});
+            return;
+        };
+    }
+
+    std.debug.print("Waiting for threads to finish...\n", .{});
+    
+    for (handles) |maybe_thread| {
+        if (maybe_thread) |thread| {
+            thread.join();
         }
     }
+    
+    std.debug.print("All threads finished\n", .{});
 }
