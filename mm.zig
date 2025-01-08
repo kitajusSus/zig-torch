@@ -1,74 +1,8 @@
 const std = @import("std");
 pub const BlockSize = 64;
 
-fn getCpuCount() usize {
-    return 4;
-}
-
-fn worker(
-    start_i: usize,
-    end_i: usize,
-    A: [*]const f32,
-    B: [*]const f32,
-    C: [*]f32,
-    M: usize,
-    N: usize,
-    K: usize,
-) void {
-    if (start_i >= M or end_i > M) {
-        std.debug.print("Invalid bounds: start_i={}, end_i={}, M={}\n", .{start_i, end_i, M});
-        return;
-    }
-
-    var i: usize = start_i;
-    while (i < end_i) : (i += BlockSize) {
-        var j: usize = 0;
-        while (j < N) : (j += BlockSize) {
-            var k: usize = 0;
-            while (k < K) : (k += BlockSize) {
-                const i_end = @min(i + BlockSize, end_i);
-                const j_end = @min(j + BlockSize, N);
-                const k_end = @min(k + BlockSize, K);
-
-                var ii: usize = i;
-                while (ii < i_end) : (ii += 1) {
-                    const rowA = ii * K;
-                    const rowC = ii * N;
-                    
-                    var jj: usize = j;
-                    while (jj < j_end) : (jj += 1) {
-                        var sum: f32 = 0.0;
-                        var kk: usize = k;
-                        
-                        while (kk < k_end) : (kk += 1) {
-                            if (rowA + kk >= M * K or kk * N + jj >= K * N) {
-                                std.debug.print("Index out of bounds\n", .{});
-                                return;
-                            }
-                            sum += A[rowA + kk] * B[kk * N + jj];
-                        }
-                        if (rowC + jj >= M * N) {
-                            std.debug.print("Output index out of bounds\n", .{});
-                            return;
-                        }
-                        C[rowC + jj] = sum;
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-export fn zig_mm(
-    A: [*]const f32,
-    B: [*]const f32,
-    C: [*]f32,
-    M: usize,
-    N: usize,
-    K: usize,
-) callconv(.C) void {
-    for (0..M) |i| {
+fn worker(start_i: usize, end_i: usize, A: [*]const f32, B: [*]const f32, C: [*]f32, _: usize, N: usize, K: usize) void {
+    for (start_i..end_i) |i| {
         for (0..N) |j| {
             var sum: f32 = 0.0;
             for (0..K) |k| {
@@ -76,5 +10,21 @@ export fn zig_mm(
             }
             C[i * N + j] = sum;
         }
+    }
+}
+
+export fn zig_mm(A: [*]const f32, B: [*]const f32, C: [*]f32, M: usize, N: usize, K: usize) callconv(.C) void {
+    const thread_count: usize = 4;
+    var handles: [4]?std.Thread = undefined;
+    const chunk_size = (M + thread_count - 1) / thread_count;
+
+    for (0..thread_count) |t| {
+        const start_i = t * chunk_size;
+        const end_i = @min(start_i + chunk_size, M);
+        handles[t] = std.Thread.spawn(.{}, worker, .{start_i, end_i, A, B, C, M, N, K}) catch null;
+    }
+
+    for (handles) |maybe_thread| {
+        if (maybe_thread) |thread| thread.join();
     }
 }
