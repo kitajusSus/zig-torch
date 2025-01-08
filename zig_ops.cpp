@@ -19,10 +19,11 @@ torch::Tensor mm(torch::Tensor a, torch::Tensor b) {
     auto b_cont = b.contiguous().to(torch::kFloat32);
     auto c = torch::zeros({M, N}, torch::kFloat32);
     
-    zig_mm(a_cont.data_ptr<float>(),
-           b_cont.data_ptr<float>(),
-           c.data_ptr<float>(),
-           M, N, K);
+    const float* ptra = a.data_ptr<float>();
+    const float* ptrb = b.data_ptr<float>();
+    float* ptrc       = c.data_ptr<float>();
+    
+    zig_mm(ptra, ptrb,ptrc,M, N, K);
     
     return c;
 }

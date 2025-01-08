@@ -78,7 +78,9 @@ fn worker(
                         // Dodajemy wynik do C (być może w C już coś było, więc +=)
                         // mozna albo nadpisać albo dodawać
                         // widze roznice w logice i chyba -> jest logiczniejsze ale nie wiem C[rowC + jj] = sum;
-                        C[rowC + jj] += sum;
+                        std.debug.print("Sum = {}, rowC = {}, jj = {}\n", .{sum, rowC, jj});
+                        C[rowC + jj] = sum;
+
                     }
                 }
             }
@@ -96,7 +98,7 @@ export fn zig_mm(
     K: usize,
 ) callconv(.C) void {
     const thread_count = getCpuCount(); //defaultowo 4
-    var handles: [thread_count]?std.Thread = undefined;
+    var handles: [4]?std.Thread = undefined;
 
     const chunk_size = (M + thread_count - 1) / thread_count;
 
