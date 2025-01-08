@@ -23,7 +23,19 @@ This function takes two tensors 2d (matrix).
 
 zig build command
 ` zig build-obj -OReleaseFast -fPIC mm.zig`
-
+`zig build-obj -fcompiler-rt mm.zig -fPIC           `
 important to create module
 `pip install -e .`
 
+
+
+
+
+but there is a progres:
+```bash
+> python testmm.py                                                                                                                                               (base) 
+Generowanie macierzy...
+
+Liczenie z zigtorch:
+thread 23705 panic: reached unreachable code
+```

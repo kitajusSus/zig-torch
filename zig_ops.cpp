@@ -1,5 +1,6 @@
 #include <torch/extension.h>
 #include <vector>
+#include <cstddef>
 
 extern "C" {
     void zig_mm(const float* A, const float* B, float* C, 
@@ -19,11 +20,11 @@ torch::Tensor mm(torch::Tensor a, torch::Tensor b) {
     auto b_cont = b.contiguous().to(torch::kFloat32);
     auto c = torch::zeros({M, N}, torch::kFloat32);
     
-    const float* ptra = a.data_ptr<float>();
-    const float* ptrb = b.data_ptr<float>();
+    const float* ptra = a_cont.data_ptr<float>();
+    const float* ptrb = b_cont.data_ptr<float>();
     float* ptrc       = c.data_ptr<float>();
     
-    zig_mm(ptra, ptrb,ptrc,M, N, K);
+    zig_mm(ptra, ptrb, ptrc, M, N, K);
     
     return c;
 }
