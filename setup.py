@@ -11,16 +11,17 @@ setup(
     ext_modules=[
         CppExtension(
             name='zigtorch',
-            sources=['zig_ops.cpp'],  # Only source files here
+            sources=['zig_ops.cpp'],  
             include_dirs=[
                 torch_include,
                 os.path.join(torch_include, 'torch', 'csrc', 'api', 'include')
             ],
             library_dirs=[torch_lib],
             libraries=['torch', 'torch_cpu', 'c10'],
-            extra_compile_args=['-fPIC'],
-            extra_link_args=['-Wl,-rpath,' + torch_lib],
-            extra_objects=['mm.o']  # Include your object file here
+            extra_compile_args=['-fPIC', '-fno-omit-frame-pointer'],
+
+            extra_link_args=['-Wl,-rpath,' + torch_lib, '-lpthread', '-fno-omit-frame-pointer'],
+            extra_objects=['mm.o']  
         ),
     ],
     cmdclass={
