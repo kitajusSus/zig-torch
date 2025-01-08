@@ -39,3 +39,6 @@ Generowanie macierzy...
 Liczenie z zigtorch:
 thread 23705 panic: reached unreachable code
 ```
+
+![image](https://github.com/user-attachments/assets/6de5f671-8e5f-4e88-83f8-3ca4b62a43c6)
+
