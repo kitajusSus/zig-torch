@@ -45,7 +45,7 @@ fish: Job 1, 'python testmm.py' terminated by signal SIGABRT (Abort)
 ```
 
 my 6 core procesor is crying 
-[image](https://github.com/user-attachments/assets/e1fd7747-1a49-495b-aa31-a92af5dc1ee6)
+![image](https://github.com/user-attachments/assets/e1fd7747-1a49-495b-aa31-a92af5dc1ee6)
 
 
 
