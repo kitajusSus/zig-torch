@@ -23,9 +23,9 @@ This function takes two tensors 2d (matrix).
 
 zig build command
 ` zig build-obj -OReleaseFast -fPIC mm.zig`
-`zig build-obj -fcompiler-rt mm.zig -fPIC           `
-important to create module
-`pip install -e .`
+`zig build-obj -fcompiler-rt mm.zig -fPIC  -lpthread`
+important to create module 
+`pip install -e .` // `python setup.py install`
 
 
 

@@ -1,30 +1,103 @@
 const std = @import("std");
+
 pub const BlockSize = 64;
 
-fn worker(start_i: usize, end_i: usize, A: [*]const f32, B: [*]const f32, C: [*]f32, _: usize, N: usize, K: usize) void {
-    for (start_i..end_i) |i| {
-        for (0..N) |j| {
-            var sum: f32 = 0.0;
-            for (0..K) |k| {
-                sum += A[i * K + k] * B[k * N + j];
+fn getCpuCount() usize {
+    return 4;
+}
+
+fn worker(
+    start_i: usize,
+    end_i: usize,
+    A: [*]const f32,
+    B: [*]const f32,
+    C: [*]f32,
+    _: usize,  // unused M parameter
+    N: usize,
+    K: usize,
+) void {
+    var i: usize = start_i;
+    while (i < end_i) : (i += BlockSize) {
+        var j: usize = 0;
+        while (j < N) : (j += BlockSize) {
+            var k: usize = 0;
+            while (k < K) : (k += BlockSize) {
+                const i_end = @min(i + BlockSize, end_i);
+                const j_end = @min(j + BlockSize, N);
+                const k_end = @min(k + BlockSize, K);
+
+                var ii: usize = i;
+                while (ii < i_end) : (ii += 1) {
+                    const rowA = ii * K;
+                    const rowC = ii * N;
+                    
+                    var jj: usize = j;
+                    while (jj < j_end) : (jj += 1) {
+                        var sum: f32 = 0.0;
+                        var kk: usize = k;
+                        
+                        // Unrolling pętli po k
+                        const unroll_factor = 4;
+                        const remaining = k_end - k;
+                        const unroll_limit = k + (remaining - (remaining % unroll_factor));
+                        
+                        // Główna pętla z unrollingiem
+                        while (kk < unroll_limit) : (kk += unroll_factor) {
+                            sum += A[rowA + kk] * B[kk * N + jj] +
+                                  A[rowA + kk + 1] * B[(kk + 1) * N + jj] +
+                                  A[rowA + kk + 2] * B[(kk + 2) * N + jj] +
+                                  A[rowA + kk + 3] * B[(kk + 3) * N + jj];
+                        }
+                        
+                        // Pozostałe elementy
+                        while (kk < k_end) : (kk += 1) {
+                            sum += A[rowA + kk] * B[kk * N + jj];
+                        }
+                        
+                        C[rowC + jj] = sum;
+                    }
+                }
             }
-            C[i * N + j] = sum;
         }
     }
 }
 
-export fn zig_mm(A: [*]const f32, B: [*]const f32, C: [*]f32, M: usize, N: usize, K: usize) callconv(.C) void {
-    const thread_count: usize = 4;
-    var handles: [4]?std.Thread = undefined;
-    const chunk_size = (M + thread_count - 1) / thread_count;
+export fn zig_mm(
+    A: [*]const f32,
+    B: [*]const f32,
+    C: [*]f32,
+    M: usize,
+    N: usize,
+    K: usize,
+) callconv(.C) void {
+    var i: usize = 0;
+    while (i < M) : (i += BlockSize) {
+        var j: usize = 0;
+        while (j < N) : (j += BlockSize) {
+            var k: usize = 0;
+            while (k < K) : (k += BlockSize) {
+                const i_end = @min(i + BlockSize, M);
+                const j_end = @min(j + BlockSize, N);
+                const k_end = @min(k + BlockSize, K);
 
-    for (0..thread_count) |t| {
-        const start_i = t * chunk_size;
-        const end_i = @min(start_i + chunk_size, M);
-        handles[t] = std.Thread.spawn(.{}, worker, .{start_i, end_i, A, B, C, M, N, K}) catch null;
-    }
-
-    for (handles) |maybe_thread| {
-        if (maybe_thread) |thread| thread.join();
+                var ii: usize = i;
+                while (ii < i_end) : (ii += 1) {
+                    const rowA = ii * K;
+                    const rowC = ii * N;
+                    
+                    var jj: usize = j;
+                    while (jj < j_end) : (jj += 1) {
+                        var sum: f32 = 0.0;
+                        var kk: usize = k;
+                        
+                        while (kk < k_end) : (kk += 1) {
+                            sum += A[rowA + kk] * B[kk * N + jj];
+                        }
+                        
+                        C[rowC + jj] = sum;
+                    }
+                }
+            }
+        }
     }
 }
