@@ -33,12 +33,16 @@ important to create module
 
 but there is a progres:
 ```bash
-> python testmm.py                                                                                                                                               (base) 
+                          (base) 
 Generowanie macierzy...
 
 Liczenie z zigtorch:
-thread 23705 panic: reached unreachable code
+Starting multiplication: 10x10 * 10x10
+Spawning thread 0: 0-5
+thread 43064 panic: reached unreachable code
+aborting due to recursive panic
+fish: Job 1, 'python testmm.py' terminated by signal SIGABRT (Abort)
 ```
 
-![image](https://github.com/user-attachments/assets/6de5f671-8e5f-4e88-83f8-3ca4b62a43c6)
+
 
