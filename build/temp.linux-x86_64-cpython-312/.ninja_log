@@ -1,2 +1,5 @@
 # ninja log v5
-0	14673	1736374999604817030	/home/kitaj/github/zig-torch/build/temp.linux-x86_64-cpython-312/zig_ops.o	a223b6ec96a383d4
+0	15683	1736461075379125276	/home/kitaj/github/zig-torch/build/temp.linux-x86_64-cpython-312/zig_ops.o	a223b6ec96a383d4
+24	15029	1736461910118945626	/home/kitaj/github/zig-torch/build/temp.linux-x86_64-cpython-312/zig_ops.o	dd9935de9e99bdca
+24	15306	1736462392727888304	/home/kitaj/github/zig-torch/build/temp.linux-x86_64-cpython-312/zig_ops.o	65dc8421785a3a1a
+24	14942	1736462554365871684	/home/kitaj/github/zig-torch/build/temp.linux-x86_64-cpython-312/zig_ops.o	dd9935de9e99bdca
