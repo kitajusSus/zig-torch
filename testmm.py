@@ -9,11 +9,11 @@ number = 1
 #print(f"Number of CPU cores available: {num_cores}")
 
 # Generating random size of a 2D tensor (matrix)
-I = random.randint(1000,1000)
-J = random.randint(1000, 1000)
-K = random.randint(1000, 1000)
+I = random.randint(500,1000)
+J = random.randint(500, 1000)
+K = random.randint(500, 1000)
 
-n = 10
+n = 1
 
 # Funkcje generujące macierze
 def gen_matrices():
@@ -50,5 +50,5 @@ print("\n After all:")
 print(f"Averge time for zigtorch.mm: {sum(zig_times) / n:.6f} seconds")
 print(f"Average time for pytorch.mm: {sum(torch_times) / n:.6f} seconds")
 
-print("zigtorch matrix: ",zigtorch.mm(A_list[1], B_list[1]))
-print("pytorch matrix:", torch.mm(A_list[1], B_list[1]))
+print("zigtorch matrix: ",zigtorch.mm(A_list[0], B_list[0]))
+print("pytorch matrix:", torch.mm(A_list[0], B_list[0]))
