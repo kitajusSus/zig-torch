@@ -9,9 +9,9 @@ number = 1
 #print(f"Number of CPU cores available: {num_cores}")
 
 # Generating random size of a 2D tensor (matrix)
-I = random.randint(10,10)
-J = random.randint(10, 10)
-K = random.randint(10, 10)
+I = random.randint(1000,1000)
+J = random.randint(1000, 1000)
+K = random.randint(1000, 1000)
 
 n = 10
 
