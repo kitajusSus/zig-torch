@@ -48,7 +48,10 @@ fish: Job 1, 'python testmm.py' terminated by signal SIGABRT (Abort)
 my 6 core procesor is crying 
 ![image](https://github.com/user-attachments/assets/e1fd7747-1a49-495b-aa31-a92af5dc1ee6)
 
+# Updated Progress 8.01.2025
+The issues mentioned above have been fixed. The current implementation is still not faster than PyTorch, but significant improvements have been made. The `mm.zig` file has been optimized, and the multithreading issues have been resolved. The setup process has been streamlined, and the performance comparison with PyTorch is now more accurate.
 
-
-
-
+# Next Steps
+- Continue optimizing the `mm.zig` file to further improve performance.
+- Explore additional techniques for optimizing matrix multiplication.
+- Keep the community updated on progress and share any new findings.

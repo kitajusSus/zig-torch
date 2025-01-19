@@ -52,3 +52,8 @@ print(f"Average time for pytorch.mm: {sum(torch_times) / n:.6f} seconds")
 
 print("zigtorch matrix: ",zigtorch.mm(A_list[0], B_list[0]))
 print("pytorch matrix:", torch.mm(A_list[0], B_list[0]))
+
+# Verify the correctness of the results
+for i in range(n):
+    assert torch.allclose(zigtorch.mm(A_list[i], B_list[i]), torch.mm(A_list[i], B_list[i])), f"Mismatch found in matrix {i+1}"
+print("All results match between zigtorch and pytorch.")
