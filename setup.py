@@ -7,17 +7,15 @@ import subprocess
 # Paths to include and library directories for PyTorch
 torch_include = torch.utils.cpp_extension.include_paths()[0]
 torch_lib = torch.utils.cpp_extension.library_paths()[0]
-"""
+
 # Compile Zig code to object file before building the extension
 def compile_zig():
     zig_cmd = [
         'zig',
-        'cc',
-        'zig_mm.zig',
-        '-c',
-        '-O3',
-        '-march=native',
+        'build-obj',
+        '-OReleaseFast',
         '-fPIC',
+        'mm.zig',
         '-o',
         'mm.o'
     ]
@@ -25,7 +23,7 @@ def compile_zig():
 
 # Compile Zig code
 compile_zig()
-"""
+
 setup(
     name='zigtorch',
     ext_modules=[
@@ -55,5 +53,3 @@ setup(
         'build_ext': BuildExtension
     }
 )
-
-
