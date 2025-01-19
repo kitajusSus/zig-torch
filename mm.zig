@@ -1,4 +1,3 @@
-
 const std = @import("std");
 const builtin = @import("builtin");
 const Thread = std.Thread;
@@ -204,4 +203,3 @@ export fn zig_mm(
         threads[t].join();
     }
 }
-
