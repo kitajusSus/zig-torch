@@ -1,55 +1,24 @@
-from setuptools import setup
-from torch.utils.cpp_extension import CppExtension, BuildExtension
-import torch
-import os
+from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext
 import subprocess
+import platform
 
-# Paths to include and library directories for PyTorch
-torch_include = torch.utils.cpp_extension.include_paths()[0]
-torch_lib = torch.utils.cpp_extension.library_paths()[0]
-
-# Compile Zig code to object file before building the extension
-def compile_zig():
-    zig_cmd = [
-        'zig',
-        'build-obj',
-        '-OReleaseFast',
-        '-fPIC',
-        'mm.zig',
-        '-o',
-        'mm.o'
-    ]
-    subprocess.check_call(zig_cmd)
-
-# Compile Zig code
-compile_zig()
+class ZigBuildExt(build_ext):
+    def build_extension(self, ext):
+        cmd = [
+            "zig", "build-lib",
+            "-dynamic",
+            "-OReleaseFast",
+            f"-femit-bin={self.get_ext_fullpath(ext.name)}",
+            "src/native.zig"
+        ]
+        subprocess.check_call(cmd)
 
 setup(
-    name='zigtorch',
-    ext_modules=[
-        CppExtension(
-            name='zigtorch',
-            sources=['zig_ops.cpp'],  # C++ wrapper
-            include_dirs=[
-                torch_include,
-                os.path.join(torch_include, 'torch', 'csrc', 'api', 'include')
-            ],
-            library_dirs=[torch_lib],
-            libraries=['torch', 'torch_cpu', 'c10'],
-            extra_compile_args=[
-                '-O3',                # High optimization level
-                '-march=native',     # Optimize for local machine architecture
-                '-fPIC', 
-                '-fno-omit-frame-pointer'
-            ],
-            extra_link_args=[
-                '-Wl,-rpath,' + torch_lib,
-                '-lpthread'
-            ],
-            extra_objects=['mm.o']  # Link the Zig object file
-        ),
-    ],
-    cmdclass={
-        'build_ext': BuildExtension
-    }
+    name="zigtorch",
+    version="0.1.0",
+    packages=["zigtorch"],
+    ext_modules=[Extension("libnative", [])],
+    cmdclass={"build_ext": ZigBuildExt},
+    install_requires=["numpy"],
 )
