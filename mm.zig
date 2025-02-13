@@ -49,26 +49,8 @@ inline fn microKernel8x8(
 
     var kk: usize = 0;
     while (kk < 8) : (kk += 1) {
-        const a0: @Vector(8, f32) = .{ 
-            A[(i + 0) * K + k + kk], 
-            A[(i + 1) * K + k + kk], 
-            A[(i + 2) * K + k + kk], 
-            A[(i + 3) * K + k + kk], 
-            A[(i + 4) * K + k + kk], 
-            A[(i + 5) * K + k + kk], 
-            A[(i + 6) * K + k + kk], 
-            A[(i + 7) * K + k + kk] 
-        };
-        const b0: @Vector(8, f32) = .{ 
-            B[(k + kk) * N + j + 0], 
-            B[(k + kk) * N + j + 1], 
-            B[(k + kk) * N + j + 2], 
-            B[(k + kk) * N + j + 3], 
-            B[(k + kk) * N + j + 4], 
-            B[(k + kk) * N + j + 5], 
-            B[(k + kk) * N + j + 6], 
-            B[(k + kk) * N + j + 7] 
-        };
+        const a0: @Vector(8, f32) = .{ A[(i + 0) * K + k + kk], A[(i + 1) * K + k + kk], A[(i + 2) * K + k + kk], A[(i + 3) * K + k + kk], A[(i + 4) * K + k + kk], A[(i + 5) * K + k + kk], A[(i + 6) * K + k + kk], A[(i + 7) * K + k + kk] };
+        const b0: @Vector(8, f32) = .{ B[(k + kk) * N + j + 0], B[(k + kk) * N + j + 1], B[(k + kk) * N + j + 2], B[(k + kk) * N + j + 3], B[(k + kk) * N + j + 4], B[(k + kk) * N + j + 5], B[(k + kk) * N + j + 6], B[(k + kk) * N + j + 7] };
 
         inline for (0..8) |row| {
             const a_element = a0[row];
@@ -81,10 +63,7 @@ inline fn microKernel8x8(
     }
 
     inline for (0..8) |row| {
-        const vec_c: @Vector(8, f32) = .{ 
-            c[row][0], c[row][1], c[row][2], c[row][3], 
-            c[row][4], c[row][5], c[row][6], c[row][7] 
-        };
+        const vec_c: @Vector(8, f32) = .{ c[row][0], c[row][1], c[row][2], c[row][3], c[row][4], c[row][5], c[row][6], c[row][7] };
         @memcpy(C[(i + row) * N + j ..][0..8], @as([*]const f32, @ptrCast(&vec_c)));
     }
 }
@@ -132,7 +111,7 @@ fn panelMultiply(
 fn worker(context: ThreadContext) void {
     const N = context.N;
     const K = context.K;
-    
+
     const block_m = BLOCK_M;
     const block_n = BLOCK_N;
     const block_k = BLOCK_K;
@@ -140,15 +119,15 @@ fn worker(context: ThreadContext) void {
     var i: usize = context.start_row;
     while (i < context.end_row) : (i += block_m) {
         const actual_block_m = @min(block_m, context.end_row - i);
-        
+
         var j: usize = 0;
         while (j < N) : (j += block_n) {
             const actual_block_n = @min(block_n, N - j);
-            
+
             var k: usize = 0;
             while (k < K) : (k += block_k) {
                 const actual_block_k = @min(block_k, K - k);
-                
+
                 panelMultiply(
                     context.A,
                     context.B,
