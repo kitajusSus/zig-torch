@@ -1,4 +1,13 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.2
 Name: zigtorch
-Version: 0.0.0
+Version: 0.1.0
+Summary: Accelerated PyTorch made with zig
+Author: kitajusSus
+Requires-Python: >=3.7
 License-File: LICENSE
+Requires-Dist: torch>=1.7.0
+Requires-Dist: numpy>=1.19.0
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
