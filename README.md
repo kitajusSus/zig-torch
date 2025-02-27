@@ -1,5 +1,10 @@
-# important 7.01.2025
-sorry guys for the confusion i could make with my reddit post about this repository. It has right now a lot of mistakes and now I am trying to fix this. 
+# important 27.02.2025
+I've changed few thing like:
+- architecture of the project
+- added benchmark
+
+mm.zig is main file with matrix multiplication function. the main problem is that i dont know how to build this, to make it work as a independent library in python, I lost an idea to make "faster pytorch", now im focused to something that can be used with or without pytorch. 
+
 
 # zig-pytorch
 As a man who is trying to understand zig and write usefull code in other language than python (or try to write something usefull), I get an idea of creating something what is using zig to optize pytorch, make is faster, more reliable. I don't know if it's going to work, but I need to do it my own as a motivation do study. 
@@ -8,8 +13,6 @@ As a man who is trying to understand zig and write usefull code in other languag
 PyTorch is written in C++ and gives API in this language, BUT ZIG GIVES US built in tools to compile code in C/C++. I can define functions from C++ in zig and use it in my code. [000_example.zig](mm.zig). As you see, something works, and the plan is  rewrite/build from scrach pytorch functions in zig and do something with it. 
 ## What do I need
 - Write pytorch functions in zig.
-- Write cpp api extension with obv declaration  `extern "C" .. ` my Zig functions.
-- Build real extension to pytorch with `torch.utilis.cpp_extension`. Create `.o` file.
 - Check it everything work on python 
 
 # 1. Creating basic functions from pytorch
