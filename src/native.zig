@@ -24,3 +24,9 @@ export fn tensor_add(
         result[i] = a[i] + b[i];
     }
 }
+
+const add = @import("add.zig");
+
+export fn addMatricesFloat(a_ptr: [*]const f32, b_ptr: [*]const f32, result_ptr: [*]f32, len: usize) void {
+    add.addMatrices(a_ptr, b_ptr, result_ptr, len);
+}
