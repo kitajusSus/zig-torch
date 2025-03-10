@@ -1,7 +1,5 @@
 # important 27.02.2025
-I've changed few thing like:
-- architecture of the project
-- added benchmark
+Ive changed few things, now I preffere to do firstyly something in zig and later on I will look for options to make bindings to python. 
 
 mm.zig is main file with matrix multiplication function. the main problem is that i dont know how to build this, to make it work as a independent library in python, I lost an idea to make "faster pytorch", now im focused to something that can be used with or without pytorch. 
 
@@ -22,39 +20,76 @@ This function takes two tensors 2d (matrix).
 
 
 
+
+
+
+
+
+## Development Workflow
+
+1. **Plan**: Define the functionality you want to implement
+2. **Test-Driven Development**: Write tests in Zig first
+3. **Implement**: Create the Zig implementation
+4. **Benchmark**: Compare performance with PyTorch
+5. **C API**: Expose functionality through C API
+6. **Python Bindings**: Create Python wrappers
+7. **Document**: Update documentation
+
+## Building the Project
+
+### Building the Zig Library
+
+```bash
+# Build the Zig library
+zig build
+
+# Run Zig tests
+zig build test
+
+# Build in release mode for better performance
+zig build -Drelease-fast
+```
 # 00. notes
 
-zig build command
-` zig build-obj -OReleaseFast -fPIC mm.zig`
-`zig build-obj -fcompiler-rt mm.zig -fPIC  -lpthread`
-important to create module 
-`pip install -e .` // `python setup.py install`
+**zig build command**
+- ` zig build-obj -OReleaseFast -fPIC mm.zig`
+- `zig build-obj -fcompiler-rt mm.zig -fPIC  -lpthread`
+
+**important to create module**
+- `pip install -e .` // `python setup.py install`
 
 
-
-
-
-but there is a progres:
+**Building the Python Package**
 ```bash
-                          (base) 
-Generowanie macierzy...
+# Install in development mode
+pip install -e .
 
-Liczenie z zigtorch:
-Starting multiplication: 10x10 * 10x10
-Spawning thread 0: 0-5
-thread 43064 panic: reached unreachable code
-aborting due to recursive panic
-fish: Job 1, 'python testmm.py' terminated by signal SIGABRT (Abort)
+# Build and install
+python setup.py install
 ```
-![image](https://github.com/user-attachments/assets/c5803144-53ac-427b-bf94-8dd3bcd84fe9)
 
-my 6 core procesor is crying 
-![image](https://github.com/user-attachments/assets/e1fd7747-1a49-495b-aa31-a92af5dc1ee6)
 
-# Updated Progress 8.01.2025
-The issues mentioned above have been fixed. The current implementation is still not faster than PyTorch, but significant improvements have been made. The `mm.zig` file has been optimized, and the multithreading issues have been resolved. The setup process has been streamlined, and the performance comparison with PyTorch is now more accurate.
+# Adding New functions
 
-# Next Steps
-- Continue optimizing the `mm.zig` file to further improve performance.
-- Explore additional techniques for optimizing matrix multiplication.
-- Keep the community updated on progress and share any new findings.
+
+ex: Creating a New Operation
+
+- create a new file in src/ (e.g., src/add.zig)  [example add.zig](src/add.zig)
+- Implement your function
+- Create a test file in tests/ (e.g., tests/testadd.zig)
+- Update build.zig to include your new files
+- Expose through C API in src/native.zig
+
+```bash
+# Basic build
+zig build
+
+# Build with optimization for release
+zig build -Drelease-fast
+
+# Run tests
+zig build test
+
+# Clean build artifacts
+rm -rf zig-out/
+```
