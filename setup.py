@@ -4,6 +4,7 @@ import subprocess
 import os
 import platform
 import shutil
+import sys
 from pathlib import Path
 
 class ZigBuildExt(build_ext):
@@ -17,7 +18,9 @@ class ZigBuildExt(build_ext):
             output_ext = ".so"
         
         # Output file path
-        output_file = self.get_ext_fullpath(ext.name) + output_ext
+        output_file = self.get_ext_fullpath(ext.name)
+        if not output_file.endswith(output_ext):
+            output_file = output_file + output_ext
         
         # Make sure the output directory exists
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -25,21 +28,29 @@ class ZigBuildExt(build_ext):
         # Determine optimization level
         optimize_flag = "-OReleaseFast"
         
-        # Build the Zig code
+        # Wykryj zainstalowaną wersję Ziga
+        try:
+            zig_version = subprocess.check_output(["zig", "version"]).decode().strip()
+            print(f"Wykryto Zig w wersji: {zig_version}")
+        except Exception as e:
+            print(f"Błąd wykrywania wersji Ziga: {e}")
+            sys.exit(1)
+        
+        # Użyj tylko jednego pliku jako głównego, a drugi jako moduł
+        # Zamiast podawać mm.zig i src/native.zig jako dwa główne pliki,
+        # użyj tylko jednego jako głównego punktu wejścia
         build_cmd = [
-            "zig", "build-lib",
-            "-dynamic",
-            optimize_flag,
-            "-fPIC",
-            "-lc",
-            f"-femit-bin={output_file}",
-            "mm.zig",
-            "src/native.zig"
+            "zig", "build",
+            "-Doptimize=" + ("ReleaseFast" if optimize_flag == "-OReleaseFast" else "Debug"),
+            "-p", str(Path(output_file).parent),
         ]
         
         self.announce(f"Building with command: {' '.join(build_cmd)}", level=2)
-        subprocess.check_call(build_cmd)
-        
+        try:
+            subprocess.check_call(build_cmd)
+        except subprocess.CalledProcessError as e:
+            print(f"Błąd kompilacji kodu Zig: {e}")
+            sys.exit(1)
         
         package_dir = Path("zigtorch")
         package_dir.mkdir(exist_ok=True)
@@ -47,14 +58,13 @@ class ZigBuildExt(build_ext):
         lib_name = "libnative" + output_ext
         lib_path = package_dir / lib_name
         
-       
         shutil.copy2(output_file, lib_path)
         self.announce(f"Copied library to {lib_path}", level=2)
 
 setup(
     name="zigtorch",
     version="0.1.0",
-    description="Accelerated PyTorch made with zig",
+    description="zigging",
     author="kitajusSus",
     packages=["zigtorch"],
     ext_modules=[Extension("native", sources=[])],

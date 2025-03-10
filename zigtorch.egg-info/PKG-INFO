@@ -1,7 +1,7 @@
 Metadata-Version: 2.2
 Name: zigtorch
 Version: 0.1.0
-Summary: Accelerated PyTorch made with zig
+Summary: zigging
 Author: kitajusSus
 Requires-Python: >=3.7
 License-File: LICENSE
