@@ -1,7 +1,5 @@
-import torch
-import numpy as np
-from .native import mm
-from .tensor import *
-from .native import add_matrices
-__version__ = "0.1.0"
+"""
+ZigTorch: High-performance tensor operations in Zig with Python bindings.
+"""
 
+__version__ = "0.1.0"
