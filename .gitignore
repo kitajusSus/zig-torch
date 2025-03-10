@@ -1,2 +1,3 @@
 build/
 zigtorch.egg-info/
+.zig-cache/
