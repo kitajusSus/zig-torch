@@ -9,11 +9,11 @@ def get_lib_path(lib_base_name="mm"):
     system = platform.system()
     
     if system == "Windows":
-        lib_filename = f"../src/{lib_base_name}.dll"
+        lib_filename = f"lib{lib_base_name}.dll"
     elif system == "Darwin":  # macOS
         lib_filename = f"lib{lib_base_name}.dylib"
     else:  # Linux i inne
-        lib_filename = f"../src/lib{lib_base_name}.so"
+        lib_filename = f"lib{lib_base_name}.so"
         
     # Zakładamy, że biblioteka jest w tym samym katalogu co skrypt,
     # lub w bieżącym katalogu roboczym.
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     # Dla dużych macierzy, Zig powinien pokazać swoją siłę.
     # M_dim, K_dim, N_dim = 512, 256, 1024
     # M_dim, K_dim, N_dim = 128, 128, 128
-    M_dim, K_dim, N_dim = 1024, 1024, 1024 # Większy test
+    M_dim, K_dim, N_dim = 50, 50, 50 # Większy test
     # M_dim, K_dim, N_dim = 2,3,4 # B. mały test
     # M_dim, K_dim, N_dim = 65, 65, 65 # Test na granicy przełączania liczby wątków
 
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
     print("\nMnożenie macierzy przy użyciu biblioteki Zig...")
     result_zig_np = multiply_matrices_with_zig(matrix_a_np, matrix_b_np)
-
+    print(result_zig_np)
     # Opcjonalnie: porównaj z wynikiem Numpy dla weryfikacji
     # Dla bardzo dużych macierzy, mnożenie w Numpy też może chwilę potrwać.
     print("\nMnożenie macierzy przy użyciu Numpy (dla weryfikacji)...")
