@@ -126,15 +126,12 @@ def multiply_matrices_with_zig(A_np: np.ndarray, B_np: np.ndarray) -> np.ndarray
 
 # Główna część skryptu
 if __name__ == "__main__":
-    # Przygotuj dane testowe
-    # Możesz dostosować rozmiary M, K, N
-    # Dla małych macierzy, narzut FFI może być znaczący.
-    # Dla dużych macierzy, Zig powinien pokazać swoją siłę.
+
     # M_dim, K_dim, N_dim = 512, 256, 1024
     # M_dim, K_dim, N_dim = 128, 128, 128
-    M_dim, K_dim, N_dim = 50, 50, 50 # Większy test
+    M_dim, K_dim, N_dim = 10000, 10000, 50 # Większy test
     # M_dim, K_dim, N_dim = 2,3,4 # B. mały test
-    # M_dim, K_dim, N_dim = 65, 65, 65 # Test na granicy przełączania liczby wątków
+    #M_dim, K_dim, N_dim = 65, 65, 65 # Test na granicy przełączania liczby wątków
 
     print(f"Przygotowywanie macierzy A ({M_dim}x{K_dim}) i B ({K_dim}x{N_dim}) typu float32...")
     # Użyj np.float32, ponieważ tego oczekuje funkcja Zig
@@ -144,7 +141,7 @@ if __name__ == "__main__":
     print("\nMnożenie macierzy przy użyciu biblioteki Zig...")
     result_zig_np = multiply_matrices_with_zig(matrix_a_np, matrix_b_np)
     print(result_zig_np)
-    # Opcjonalnie: porównaj z wynikiem Numpy dla weryfikacji
+
     # Dla bardzo dużych macierzy, mnożenie w Numpy też może chwilę potrwać.
     print("\nMnożenie macierzy przy użyciu Numpy (dla weryfikacji)...")
     start_time_np = time.perf_counter()

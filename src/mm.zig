@@ -1,7 +1,7 @@
 const std = @import("std");
 const Thread = std.Thread;
 const builtin = @import("builtin");
-const math = std.math; // Używamy @min/@max bezpośrednio z builtins
+// const math = std.math; // Używamy @min/@max z builtins
 const mem = std.mem;
 const debug = std.debug;
 
@@ -32,7 +32,6 @@ const Barrier = struct {
                 Thread.yield() catch {
                     // W przypadku błędu yield, można spróbować krótkiego spin-loopa
                     // lub po prostu kontynuować pętlę.
-                    // Dla debugowania, można tu coś wydrukować, ale ostrożnie.
                 };
             }
         }
@@ -43,8 +42,8 @@ const ThreadContext = struct {
     id: usize,
     start_row: usize,
     end_row: usize,
-    A: [*]const f32,
-    B: [*]const f32,
+    A: [*]const f32, // Zmieniono z powrotem na wskaźniki dla FFI
+    B: [*]const f32, // Zmieniono z powrotem na wskaźniki dla FFI
     C: [*]f32,
     full_M: usize,
     full_N: usize,
@@ -53,8 +52,8 @@ const ThreadContext = struct {
 };
 
 fn multiplyBlock(
-    A: [*]const f32,
-    B: [*]const f32,
+    A: [*]const f32, // Zmieniono z powrotem na wskaźniki
+    B: [*]const f32, // Zmieniono z powrotem na wskaźniki
     C: [*]f32,
     block_start_row_C: usize,
     block_start_col_C: usize,
@@ -81,7 +80,7 @@ fn multiplyBlock(
 }
 
 fn worker(context: *ThreadContext) void {
-    // debug.print("Worker {d}: start_row={d}, end_row={d}\n", .{context.id, context.start_row, context.end_row});
+    //debug.print("Worker {d}: start_row={d}, end_row={d}\n", .{context.id, context.start_row, context.end_row});
     const A = context.A;
     const B = context.B;
     const C = context.C;
@@ -99,9 +98,9 @@ fn worker(context: *ThreadContext) void {
             multiplyBlock(A, B, C, i_block_start, j_block_start, current_block_M, current_block_N, K, N, K);
         }
     }
-    // debug.print("Worker {d} calling barrier.wait()\n", .{context.id});
-    context.barrier.wait();
-    // debug.print("Worker {d} finished barrier.wait()\n", .{context.id});
+    //debug.print("Worker {d} calling barrier.wait()\n", .{context.id});
+    // context.barrier.wait(); // <--- ZAKOMENTOWANE, jak w Twoim działającym kodzie
+    //debug.print("Worker {d} finished barrier.wait()\n", .{context.id});
 }
 
 pub export fn zig_mm(
@@ -112,7 +111,7 @@ pub export fn zig_mm(
     N: usize,
     K: usize,
 ) callconv(.C) void {
-    // debug.print("zig_mm called: M={d}, N={d}, K={d}\n", .{ M, N, K });
+    //debug.print("zig_mm called: M={d}, N={d}, K={d}\n", .{ M, N, K });
 
     const num_elements_C = M * N;
     if (num_elements_C > 0) {
@@ -122,109 +121,109 @@ pub export fn zig_mm(
         }
     }
 
-    if (M == 0) { // Jeśli nie ma nic do zrobienia
-        // debug.print("M == 0, returning early\n", .{});
+    if (M == 0) {
+        //debug.print("M == 0, returning early\n", .{});
         return;
     }
 
-    var num_threads_to_use: usize = Thread.getCpuCount() catch 1;
-    const min_rows_for_threading = BLOCK_SIZE * 1; // Lub nawet 1, jeśli chcemy testować narzut
+    const num_threads_initial_request: usize = Thread.getCpuCount() catch 1;
+    const min_rows_for_threading = BLOCK_SIZE * 1;
+
+    var final_num_threads_to_use: usize = 0; // Zadeklaruj bez inicjalizacji
 
     if (M < min_rows_for_threading or N < BLOCK_SIZE or K < BLOCK_SIZE) {
-        num_threads_to_use = 1;
-    } else if (num_threads_to_use > M) { // Nie więcej wątków niż wierszy do przetworzenia
-        num_threads_to_use = M;
-    }
-    if (num_threads_to_use == 0) { // Upewnij się, że jest co najmniej jeden wątek
-        num_threads_to_use = 1;
+        final_num_threads_to_use = 1;
+    } else if (num_threads_initial_request > M) {
+        final_num_threads_to_use = M;
+    } else if (num_threads_initial_request == 0) {
+        final_num_threads_to_use = 1;
+    } else {
+        final_num_threads_to_use = num_threads_initial_request;
     }
 
-    // debug.print("Using {d} threads\n", .{num_threads_to_use});
+    //debug.print("Calculated final_num_threads_to_use: {d}\n", .{final_num_threads_to_use});
 
-    if (num_threads_to_use <= 1) {
-        // debug.print("Single-threaded execution\n", .{});
+    if (final_num_threads_to_use <= 1) {
+        //debug.print("Single-threaded execution path chosen.\n", .{});
         multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K);
         return;
     }
 
     // --- Wielowątkowość ---
-    // debug.print("Multi-threaded execution with {d} threads\n", .{num_threads_to_use});
+    //debug.print("Multi-threaded execution path with initially {d} threads\n", .{final_num_threads_to_use});
 
-    var barrier_storage = Barrier.init(num_threads_to_use); // Inicjalizuj barierę z *faktyczną* liczbą wątków, które będą pracować
-    const barrier_ptr: *Barrier = &barrier_storage;
-
-    // Ogranicz do maksymalnej liczby wątków, dla których mamy miejsce w tablicach
     const MAX_SUPPORTED_THREADS = 32;
-    if (num_threads_to_use > MAX_SUPPORTED_THREADS) {
-        // debug.print("Clamping num_threads_to_use from {d} to {d}\n", .{num_threads_to_use, MAX_SUPPORTED_THREADS});
-        num_threads_to_use = MAX_SUPPORTED_THREADS;
-        barrier_storage = Barrier.init(num_threads_to_use); // Ponownie inicjuj barierę
+    if (final_num_threads_to_use > MAX_SUPPORTED_THREADS) {
+        //debug.print("Clamping final_num_threads_to_use from {d} to {d}\n", .{final_num_threads_to_use, MAX_SUPPORTED_THREADS});
+        final_num_threads_to_use = MAX_SUPPORTED_THREADS;
     }
 
     var contexts: [MAX_SUPPORTED_THREADS]ThreadContext = undefined;
-    var threads: [MAX_SUPPORTED_THREADS]Thread = undefined;
+    var threads: [MAX_SUPPORTED_THREADS]Thread = undefined; // Tablica na uchwyty wątków
 
-    const base_rows_per_thread = M / num_threads_to_use;
-    const extra_rows = M % num_threads_to_use;
-    var current_start_row: usize = 0;
-    var threads_successfully_spawned: usize = 0;
+    // Krok 1: Oblicz, ile wątków faktycznie dostanie pracę
+    var temp_actual_working_threads: usize = 0;
+    var temp_current_start_row_for_calc: usize = 0; // Zmienna tylko do kalkulacji
+    const temp_base_rows_per_thread = M / final_num_threads_to_use;
+    const temp_extra_rows = M % final_num_threads_to_use;
 
-    // Tworzenie wątków (bez ostatniego, który obsłuży główny wątek)
-    var t_idx: usize = 0;
-    while (t_idx < num_threads_to_use - 1) : (t_idx += 1) {
-        const rows_offset: usize = if (t_idx < extra_rows) @as(usize, 1) else @as(usize, 0);
-        const rows_for_this_thread = base_rows_per_thread + rows_offset;
+    for (0..final_num_threads_to_use) |i_calc| {
+        const rows_offset_calc: usize = if (i_calc < temp_extra_rows) @as(usize, 1) else @as(usize, 0);
+        const rows_for_this_thread_calc = temp_base_rows_per_thread + rows_offset_calc;
 
-        if (rows_for_this_thread == 0) {
-            // debug.print("Thread {d} has no rows, skipping spawn.\n", .{t_idx});
-            // To skomplikuje logikę bariery, jeśli nie dostosujemy `num_threads_to_use` na bieżąco.
-            // Dla uproszczenia, załóżmy na razie, że każdy wątek dostaje pracę lub `num_threads_to_use` jest małe.
-            // Jeśli M jest bardzo małe, num_threads_to_use powinno być 1.
-            continue;
-        }
+        if (rows_for_this_thread_calc == 0) continue;
 
-        const end_row = @min(current_start_row + rows_for_this_thread, M);
-        if (current_start_row >= end_row) continue; // Nie ma już pracy
+        const end_row_calc = @min(temp_current_start_row_for_calc + rows_for_this_thread_calc, M);
+        if (temp_current_start_row_for_calc >= end_row_calc) continue;
 
-        contexts[t_idx] = ThreadContext{
-            .id = t_idx,
-            .start_row = current_start_row,
-            .end_row = end_row,
-            .A = A_ptr,
-            .B = B_ptr,
-            .C = C_ptr,
-            .full_M = M,
-            .full_N = N,
-            .full_K = K,
-            .barrier = barrier_ptr,
-        };
-
-        // debug.print("Spawning thread {d} for rows [{d}..{d})\n", .{t_idx, contexts[t_idx].start_row, contexts[t_idx].end_row});
-        threads[threads_successfully_spawned] = Thread.spawn(.{}, worker, .{&contexts[t_idx]}) catch |err| {
-            debug.print("Failed to spawn thread {d}: {any}. Main thread will attempt to do its work if it's the last chunk.\n", .{ t_idx, err });
-            // W tym prostym modelu, jeśli spawn zawiedzie, ta praca nie zostanie podjęta.
-            // Można by dodać logikę, aby główny wątek ją przejął.
-            // Na razie, jeśli spawn się nie powiedzie, ten wątek nie zostanie dołączony.
-            // WAŻNE: To może zepsuć barierę, jeśli `barrier_storage.total` nie zostanie zaktualizowane!
-            // Rozwiązanie: nie zwiększaj `threads_successfully_spawned` i zaktualizuj `barrier_storage.total`
-            // przed wywołaniem `worker` przez główny wątek i przed `join`.
-            // Na razie dla uproszczenia, zakładamy, że spawn się powiedzie.
-            // LUB: Zmniejsz `barrier_storage.total` tutaj.
-            // barrier_storage.total -=1; // To nie jest thread-safe jeśli inne wątki już pracują z barierą
-            continue; // Nie udało się utworzyć, nie zwiększaj licznika
-        };
-        threads_successfully_spawned += 1;
-        current_start_row = end_row;
+        temp_actual_working_threads += 1;
+        temp_current_start_row_for_calc = end_row_calc;
     }
 
-    // Przygotuj kontekst dla głównego wątku (który wykonuje pracę ostatniego segmentu)
-    // Jeśli `num_threads_to_use` było 1, ta pętla nie wykonała się, `current_start_row` to 0.
-    // Jeśli M jest małe, `current_start_row` mogło już osiągnąć M.
-    if (current_start_row < M) {
-        contexts[num_threads_to_use - 1] = ThreadContext{
-            .id = num_threads_to_use - 1,
-            .start_row = current_start_row,
-            .end_row = M, // Główny wątek bierze resztę
+    if (temp_actual_working_threads == 0 and M > 0) {
+        //debug.print("No actual working threads after distribution (M > 0). Forcing single thread.\n", .{});
+        multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K);
+        return;
+    }
+    // Jeśli M == 0, temp_actual_working_threads będzie 0, co jest ok, bo wróciliśmy na początku.
+
+    //debug.print("Actual working threads determined: {d}\n", .{temp_actual_working_threads});
+
+    // Jeśli po kalkulacji wyszło, że tylko 1 wątek ma pracować, idź ścieżką jednowątkową
+    if (temp_actual_working_threads <= 1 and M > 0) { // Dodano M > 0
+        //debug.print("Fallback to single-threaded after calculating actual workers.\n", .{});
+        multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K);
+        return;
+    }
+    if (temp_actual_working_threads == 0) { // Jeśli M było 0, temp_actual_working_threads będzie 0
+        return;
+    }
+
+    // Krok 2: Inicjalizuj barierę z *faktyczną* liczbą pracujących wątków
+    var barrier_storage = Barrier.init(temp_actual_working_threads);
+    const barrier_ptr: *Barrier = &barrier_storage;
+
+    // Krok 3: Uruchom wątki pomocnicze i przygotuj główny wątek
+    var threads_spawned_count: usize = 0; // Licznik faktycznie utworzonych wątków pomocniczych
+    var main_thread_context_idx: usize = 0; // Indeks w contexts dla głównego wątku (ustawimy go)
+    var main_thread_has_work: bool = false;
+
+    var current_start_row_for_dispatch: usize = 0;
+    var current_active_context_idx: usize = 0; // Indeks dla tablicy contexts[] i threads[]
+
+    for (0..final_num_threads_to_use) |original_slot_idx_dispatch| {
+        const rows_offset_dispatch: usize = if (original_slot_idx_dispatch < temp_extra_rows) @as(usize, 1) else @as(usize, 0);
+        const rows_for_this_slot_dispatch = temp_base_rows_per_thread + rows_offset_dispatch;
+        if (rows_for_this_slot_dispatch == 0) continue;
+
+        const actual_start_row_for_dispatch = current_start_row_for_dispatch;
+        const actual_end_row_for_dispatch = @min(actual_start_row_for_dispatch + rows_for_this_slot_dispatch, M);
+        if (actual_start_row_for_dispatch >= actual_end_row_for_dispatch) continue;
+
+        contexts[current_active_context_idx] = ThreadContext{
+            .id = current_active_context_idx,
+            .start_row = actual_start_row_for_dispatch,
+            .end_row = actual_end_row_for_dispatch,
             .A = A_ptr,
             .B = B_ptr,
             .C = C_ptr,
@@ -233,30 +232,45 @@ pub export fn zig_mm(
             .full_K = K,
             .barrier = barrier_ptr,
         };
-        // debug.print("Main thread (context {d}) executing work for rows [{d}..{d})\n", .{num_threads_to_use - 1, contexts[num_threads_to_use - 1].start_row, contexts[num_threads_to_use - 1].end_row});
-        worker(&contexts[num_threads_to_use - 1]);
-    } else if (num_threads_to_use > 0) { // Jeśli główny wątek nie ma pracy, ale miał być
-        // debug.print("Main thread (context {d}) has no work (start_row {d} >= M {d}).\n", .{num_threads_to_use -1, current_start_row, M});
-        // Musimy dostosować liczbę wątków w barierze, jeśli główny wątek nie będzie pracował
-        // a był wliczony do `num_threads_to_use`.
-        if (barrier_storage.total == num_threads_to_use) { // Jeśli główny wątek był liczony
-            barrier_storage.total = threads_successfully_spawned; // Tylko te, które wystartowały
-            if (barrier_storage.total == 0 and M > 0) { // Żaden pomocniczy wątek nie wystartował, a główny nie ma pracy
-                // To powinno być obsłużone przez num_threads_to_use = 1 na początku
-                debug.print("Error: No threads working but M>0. This should not happen.\n", .{});
-                // multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K); // Fallback
+
+        // Pierwsze `temp_actual_working_threads - 1` kontekstów dla wątków pomocniczych
+        // Ostatni kontekst dla głównego wątku
+        if (current_active_context_idx < temp_actual_working_threads - 1) {
+            //debug.print("Spawning thread (active_ctx_idx {d}) for rows [{d}..{d})\n", .{current_active_context_idx, contexts[current_active_context_idx].start_row, contexts[current_active_context_idx].end_row});
+            if (threads_spawned_count < threads.len) { // Upewnij się, że nie wychodzisz poza tablicę threads
+                threads[threads_spawned_count] = Thread.spawn(.{}, worker, .{&contexts[current_active_context_idx]}) catch |err| {
+                    debug.print("CRITICAL: Failed to spawn thread for active_ctx_idx {d}: {any}. Execution will be single-threaded.\n", .{ current_active_context_idx, err });
+                    multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K);
+                    return; // Awaryjne wyjście do jednowątkowego
+                };
+                threads_spawned_count += 1;
+            } else {
+                debug.print("CRITICAL ERROR: Ran out of space in 'threads' array. This should not happen.\n", .{});
+                multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K);
                 return;
             }
-            // debug.print("Adjusted barrier total to {d} because main thread has no work.\n", .{barrier_storage.total});
+        } else {
+            main_thread_context_idx = current_active_context_idx;
+            main_thread_has_work = true;
+            //debug.print("Main thread will be context {d} for rows [{d}..{d})\n", .{contexts[main_thread_context_idx].id, contexts[main_thread_context_idx].start_row, contexts[main_thread_context_idx].end_row});
         }
+
+        current_active_context_idx += 1;
+        current_start_row_for_dispatch = actual_end_row_for_dispatch;
+        if (current_active_context_idx >= temp_actual_working_threads) break; // Przydzielono pracę dla wszystkich pracujących wątków
+    }
+
+    // Główny wątek wykonuje swoją pracę
+    if (main_thread_has_work) {
+        //debug.print("Main thread (id {d}) actually working on rows [{d}..{d})\n", .{contexts[main_thread_context_idx].id, contexts[main_thread_context_idx].start_row, contexts[main_thread_context_idx].end_row});
+        worker(&contexts[main_thread_context_idx]);
     }
 
     // Dołączanie utworzonych wątków
     var join_idx: usize = 0;
-    while (join_idx < threads_successfully_spawned) : (join_idx += 1) {
-        // debug.print("Joining thread for context id {d}\n", .{contexts[join_idx].id}); // Zakładając, że contexts[join_idx] jest poprawne
+    while (join_idx < threads_spawned_count) : (join_idx += 1) {
+        //debug.print("Joining thread for context id {d}\n", .{contexts[join_idx].id}); // Uwaga: contexts[join_idx].id będzie poprawne
         threads[join_idx].join();
-        // debug.print("Joined thread for context id {d}\n", .{contexts[join_idx].id});
     }
-    // debug.print("zig_mm finished\n", .{});
+    //debug.print("zig_mm finished\n", .{});
 }
