@@ -5,7 +5,7 @@ const zigtorch = @import("zigtorch");
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
     const allocator = std.heap.page_allocator;
-
+    _ = allocator;
     // Define matrices for a simple neural network
     // Input layer (2 neurons) to hidden layer (3 neurons)
     const weights1 = [_]f32{
