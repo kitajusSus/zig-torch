@@ -76,12 +76,11 @@ except AttributeError:
     print("Sprawdź, czy funkcja jest poprawnie zadeklarowana jako 'pub export' w kodzie Zig.")
     exit(1)
 
-# Funkcja opakowująca wywołanie Zig
+# Funkcja opakowująca wywołanie Zigdef multiply_matrices_with_zig(A_np: np.ndarray, B_np: np.ndarray) -> np.ndarray:
 def multiply_matrices_with_zig(A_np: np.ndarray, B_np: np.ndarray) -> np.ndarray:
-    """
-    Mnoży dwie macierze NumPy (A * B) używając biblioteki Zig.
-    Macierze muszą być typu float32 i C-ciągłe.
-    """
+#    Mnoży dwie macierze NumPy (A * B) używając biblioteki Zig.
+ #   Macierze muszą być typu float32 i C-ciągłe.
+    
     if not A_np.flags['C_CONTIGUOUS']:
         A_np = np.ascontiguousarray(A_np, dtype=np.float32)
     if not B_np.flags['C_CONTIGUOUS']:
@@ -114,13 +113,13 @@ def multiply_matrices_with_zig(A_np: np.ndarray, B_np: np.ndarray) -> np.ndarray
     C_ptr = C_np.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
     
     # Wywołaj funkcję Zig
-    print(f"Wywoływanie zig_mm z M={M}, N={N}, K={K}")
+   # print(f"Wywoływanie zig_mm z M={M}, N={N}, K={K}")
     start_time = time.perf_counter()
     zig_mm_func(A_ptr, B_ptr, C_ptr, M, N, K)
     end_time = time.perf_counter()
     
     duration_ms = (end_time - start_time) * 1000
-    print(f"Mnożenie macierzy ({M}x{K}) x ({K}x{N}) przez Zig zajęło: {duration_ms:.3f} ms")
+    print(f"Multiply with zig ({M}x{K}) x ({K}x{N}) took : {duration_ms:.3f} ms")
     
     return C_np
 
@@ -129,38 +128,39 @@ if __name__ == "__main__":
 
     # M_dim, K_dim, N_dim = 512, 256, 1024
     # M_dim, K_dim, N_dim = 128, 128, 128
-    M_dim, K_dim, N_dim = 500, 500, 50 # Większy test
+    M_dim, K_dim, N_dim = 50, 50, 50 # Większy test
     # M_dim, K_dim, N_dim = 2,3,4 # B. mały test
     #M_dim, K_dim, N_dim = 65, 65, 65 # Test na granicy przełączania liczby wątków
 
-    print(f"Przygotowywanie macierzy A ({M_dim}x{K_dim}) i B ({K_dim}x{N_dim}) typu float32...")
+    print(f"Creating Matrix A ({M_dim}x{K_dim}) and B ({K_dim}x{N_dim}) type float32...")
     # Użyj np.float32, ponieważ tego oczekuje funkcja Zig
     matrix_a_np = np.random.rand(M_dim, K_dim).astype(np.float32)
     matrix_b_np = np.random.rand(K_dim, N_dim).astype(np.float32)
 
-    print("\nMnożenie macierzy przy użyciu biblioteki Zig...")
+    print("\n ZIG MULTIPLYING : !!!!!!!!!!!!!!!!!")
+
     result_zig_np = multiply_matrices_with_zig(matrix_a_np, matrix_b_np)
-    print(result_zig_np)
+    #print(result_zig_np)
 
     # Dla bardzo dużych macierzy, mnożenie w Numpy też może chwilę potrwać.
-    print("\nMnożenie macierzy przy użyciu Numpy (dla weryfikacji)...")
+    print("\n Multiply with Numpy (for comparison):")
     start_time_np = time.perf_counter()
     result_numpy_np = np.dot(matrix_a_np, matrix_b_np)
     end_time_np = time.perf_counter()
     duration_np_ms = (end_time_np - start_time_np) * 1000
-    print(f"Mnożenie przez Numpy zajęło: {duration_np_ms:.3f} ms")
+    print(f"Time for numpy: {duration_np_ms:.3f} ms")
 
-    print("\nSprawdzanie poprawności wyniku...")
-    # Użyj tolerancji dla porównań liczb zmiennoprzecinkowych
-    # `atol` (absolute tolerance) jest ważne dla f32.
-    # `rtol` (relative tolerance) też może być przydatne.
+    print("\nChecking...")
+    # comparison for floats
+    # `atol` (absolute tolerance) 
+    # `rtol` (relative tolerance) 
     if np.allclose(result_zig_np, result_numpy_np, rtol=1e-5, atol=1e-5):
-        print("Wyniki z Zig i Numpy są ZGODNE (w granicach tolerancji).")
+        print("ZIG IS NOT MULTYPLYING ONLY ZEROES!!!! IT IS WORKING")
     else:
         diff = np.abs(result_zig_np - result_numpy_np)
-        print("BŁĄD: Wyniki z Zig i Numpy RÓŻNIĄ SIĘ!")
-        print(f"  Maksymalna różnica absolutna: {np.max(diff)}")
-        print(f"  Średnia różnica absolutna: {np.mean(diff)}")
+        print("ERROS")
+        print(f"  MAX ABSOLUTE DIFF: =  {np.max(diff)}")
+        print(f"  MEAN DIFF: =   {np.mean(diff)}")
         # Pokaż kilka pierwszych elementów, gdzie jest różnica
         # for i in range(M_dim):
         #     for j in range(N_dim):
@@ -170,9 +170,13 @@ if __name__ == "__main__":
         #                 exit(1)
 
 
-    print(f"\nFragment macierzy wynikowej C (pierwsze 5x5 lub mniej):")
+    print(f"\n Zig matrix  ( first 5x5 OR LESS):")
     rows_to_show = min(5, M_dim)
     cols_to_show = min(5, N_dim)
     print(result_zig_np[:rows_to_show, :cols_to_show])
     
+    print(f"Numpy Matrix ( first 5x5 OR LESS):")
+    print(result_numpy_np[:rows_to_show, :cols_to_show])
+
+
     print("\nTest FFI zakończony.")
