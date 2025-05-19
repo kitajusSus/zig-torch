@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
     # M_dim, K_dim, N_dim = 512, 256, 1024
     # M_dim, K_dim, N_dim = 128, 128, 128
-    M_dim, K_dim, N_dim = 10000, 10000, 50 # Większy test
+    M_dim, K_dim, N_dim = 500, 500, 50 # Większy test
     # M_dim, K_dim, N_dim = 2,3,4 # B. mały test
     #M_dim, K_dim, N_dim = 65, 65, 65 # Test na granicy przełączania liczby wątków
 
