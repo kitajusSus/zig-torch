@@ -5,8 +5,8 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
-        .name = "ZIGTORCH",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .name = "zigtorch",
+        .root_source_file = .{ .path = "src/mm.zig" },
         .target = target,
         .optimize = optimize,
     });

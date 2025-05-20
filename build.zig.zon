@@ -1,10 +1,9 @@
 .{
-    .name = "ZIGTORCH",
+    .name = zigtorch,
     .version = "0.1.0",
-
     .dependencies = .{
         .zigtorch = .{
-            .path = "zig-torch",
+            .path = "zigtorch",
         },
     },
 }
