@@ -1,5 +1,5 @@
 """
-ZigTorch: High-performance tensor operations in Zig with Python bindings.
+ZigTorch: prima sort - performance 
 """
 
 __version__ = "0.1.0"
