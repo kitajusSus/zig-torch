@@ -42,8 +42,8 @@ const ThreadContext = struct {
     id: usize,
     start_row: usize,
     end_row: usize,
-    A: [*]const f32, // Zmieniono z powrotem na wskaźniki dla FFI
-    B: [*]const f32, // Zmieniono z powrotem na wskaźniki dla FFI
+    A: [*]const f32,
+    B: [*]const f32,
     C: [*]f32,
     full_M: usize,
     full_N: usize,
@@ -52,8 +52,8 @@ const ThreadContext = struct {
 };
 
 fn multiplyBlock(
-    A: [*]const f32, // Zmieniono z powrotem na wskaźniki
-    B: [*]const f32, // Zmieniono z powrotem na wskaźniki
+    A: [*]const f32,
+    B: [*]const f32,
     C: [*]f32,
     block_start_row_C: usize,
     block_start_col_C: usize,
@@ -98,9 +98,6 @@ fn worker(context: *ThreadContext) void {
             multiplyBlock(A, B, C, i_block_start, j_block_start, current_block_M, current_block_N, K, N, K);
         }
     }
-    //debug.print("Worker {d} calling barrier.wait()\n", .{context.id});
-    // context.barrier.wait(); // <--- ZAKOMENTOWANE, jak w Twoim działającym kodzie
-    //debug.print("Worker {d} finished barrier.wait()\n", .{context.id});
 }
 
 pub export fn zig_mm(
@@ -149,8 +146,7 @@ pub export fn zig_mm(
         return;
     }
 
-    // --- Wielowątkowość ---
-    //debug.print("Multi-threaded execution path with initially {d} threads\n", .{final_num_threads_to_use});
+    debug.print("Multi-threaded execution path with initially {d} threads\n", .{final_num_threads_to_use});
 
     const MAX_SUPPORTED_THREADS = 32;
     if (final_num_threads_to_use > MAX_SUPPORTED_THREADS) {
@@ -159,11 +155,10 @@ pub export fn zig_mm(
     }
 
     var contexts: [MAX_SUPPORTED_THREADS]ThreadContext = undefined;
-    var threads: [MAX_SUPPORTED_THREADS]Thread = undefined; // Tablica na uchwyty wątków
+    var threads: [MAX_SUPPORTED_THREADS]Thread = undefined;
 
-    // Krok 1: Oblicz, ile wątków faktycznie dostanie pracę
     var temp_actual_working_threads: usize = 0;
-    var temp_current_start_row_for_calc: usize = 0; // Zmienna tylko do kalkulacji
+    var temp_current_start_row_for_calc: usize = 0;
     const temp_base_rows_per_thread = M / final_num_threads_to_use;
     const temp_extra_rows = M % final_num_threads_to_use;
 
