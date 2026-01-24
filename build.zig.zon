@@ -1,9 +1,11 @@
 .{
-    .name = zigtorch,
+    .name = .zigtorch,
     .version = "0.1.0",
     .dependencies = .{
         .zigtorch = .{
             .path = "zigtorch",
         },
     },
+    .paths = .{"src/main.zig"},
+    .fingerprint = 0x66b6a88f2e55f7dd,
 }
