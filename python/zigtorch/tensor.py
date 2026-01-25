@@ -2,6 +2,7 @@
 import ctypes
 import numpy as np
 import os
+import platform
 from pathlib import Path
 
 # Load the shared library

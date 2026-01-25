@@ -27,6 +27,6 @@ pub export fn zigtorch_tensor_add(
 }
 
 // Eksportuj informacje o wersji
-pub export fn zigtorch_version() callconv(.C) [*:0]const u8 {
+pub export fn zigtorch_get_version() callconv(.C) [*:0]const u8 {
     return "ZigTorch 0.1.0";
 }

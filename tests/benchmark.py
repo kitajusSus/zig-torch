@@ -2,7 +2,6 @@ import torch
 import numpy as np
 import zigtorch
 import time
-import random
 import argparse
 
 def generate_matrices(m, n, k, dtype=torch.float32, seed=42):

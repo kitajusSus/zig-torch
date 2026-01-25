@@ -2,19 +2,50 @@
 import ctypes
 import numpy as np
 import os
+import platform
+from pathlib import Path
+
+
+def _get_lib_path():
+    """Find the ZigTorch shared library in common locations."""
+    lib_name = {
+        "Windows": "libzigtorch.dll",
+        "Darwin": "libzigtorch.dylib",  # macOS
+        "Linux": "libzigtorch.so",
+    }.get(platform.system(), "libzigtorch.so")
+    
+    possible_paths = [
+        # Same directory as this script
+        Path(__file__).parent / lib_name,
+        # Standard library locations
+        Path("/usr/local/lib") / lib_name,
+        Path("/usr/lib") / lib_name,
+        # Relative to Python package
+        Path(__file__).parent.parent.parent / "zig-out" / "lib" / lib_name,
+        # Fallback for development
+        Path(__file__).parent.parent / "zig-out" / "lib" / lib_name,
+    ]
+    
+    for path in possible_paths:
+        if path.exists():
+            return str(path)
+    
+    raise FileNotFoundError(f"Could not find {lib_name}")
+
 
 # Load the shared library
-_lib_path = os.path.join(os.path.dirname(__file__), '../zig-out/lib/libzigtorch.so')
+_lib_path = _get_lib_path()
 _lib = ctypes.CDLL(_lib_path)
 
-# Define function signatures
-_lib.addMatricesFloat.argtypes = [
+# Define function signatures for tensor add
+_lib.zigtorch_tensor_add.argtypes = [
     ctypes.POINTER(ctypes.c_float),
     ctypes.POINTER(ctypes.c_float),
     ctypes.POINTER(ctypes.c_float),
     ctypes.c_size_t
 ]
-_lib.addMatricesFloat.restype = None
+_lib.zigtorch_tensor_add.restype = None
+
 
 def add_matrices(a, b):
     """Add two matrices element-wise"""
@@ -35,6 +66,6 @@ def add_matrices(a, b):
     result_ptr = result.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
     
     # Call the C function
-    _lib.addMatricesFloat(a_ptr, b_ptr, result_ptr, a_array.size)
+    _lib.zigtorch_tensor_add(a_ptr, b_ptr, result_ptr, a_array.size)
     
     return result

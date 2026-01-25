@@ -2,5 +2,29 @@ build/
 zigtorch.egg-info/
 .zig-cache/
 dist/
-build/
 pimp.py
+
+# Compiled binaries
+*.so
+*.o
+*.dylib
+*.dll
+*.a
+*.lib
+
+# Zig build output
+zig-out/
+zig-cache/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

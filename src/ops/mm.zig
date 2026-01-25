@@ -437,8 +437,6 @@ pub export fn zig_mm(
 
     // Oczekiwanie na zakończenie wszystkich utworzonych wątków
     for (0..threads_created) |t| {
-        threads[t].join() catch |err| {
-            std.debug.print("Error joining thread {d}: {any}\n", .{ t, err });
-        };
+        threads[t].join();
     }
 }

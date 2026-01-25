@@ -146,7 +146,7 @@ pub export fn zig_mm(
         return;
     }
 
-    debug.print("Multi-threaded execution path with initially {d} threads\n", .{final_num_threads_to_use});
+    //debug.print("Multi-threaded execution path with initially {d} threads\n", .{final_num_threads_to_use});
 
     const MAX_SUPPORTED_THREADS = 32;
     if (final_num_threads_to_use > MAX_SUPPORTED_THREADS) {

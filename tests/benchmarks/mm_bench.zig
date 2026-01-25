@@ -26,12 +26,12 @@ fn benchmark(m: usize, n: usize, k: usize, iterations: usize) !void {
     var b = try allocator.alloc(f32, k * n);
     defer allocator.free(b);
 
-    var c = try allocator.alloc(f32, m * n); //maybe use const here idk
+    const c = try allocator.alloc(f32, m * n);
     defer allocator.free(c);
 
     // Initialize with random data
     var prng = std.rand.DefaultPrng.init(0);
-    var rand = prng.random();
+    const rand = prng.random();
 
     for (0..a.len) |i| {
         a[i] = rand.float(f32);

@@ -1,11 +1,10 @@
 .{
-    .name = .zigtorch,
+    .name = "zigtorch",
     .version = "0.1.0",
-    .dependencies = .{
-        .zigtorch = .{
-            .path = "zigtorch",
-        },
+    .dependencies = .{},
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
     },
-    .paths = .{"src/main.zig"},
-    .fingerprint = 0x66b6a88f2e55f7dd,
 }
