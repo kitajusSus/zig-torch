@@ -275,7 +275,6 @@ const ThreadContext = struct {
     barrier: *Barrier,
 };
 
-// Funkcja wykonywana przez każdy wątek
 fn worker(context: *ThreadContext) void {
     const A = context.A;
     const B = context.B;
@@ -286,17 +285,14 @@ fn worker(context: *ThreadContext) void {
     const start_row = context.start_row;
     const end_row = context.end_row;
 
-    // Inicjalizacja wynikowej części macierzy zerami
     for (start_row..end_row) |i| {
         for (0..N) |j| {
             C[i * N + j] = 0;
         }
     }
 
-    // Synchronizacja wątków po inicjalizacji
     context.barrier.wait();
 
-    // Mnożenie bloków macierzy
     var i: usize = start_row;
     while (i < end_row) : (i += BLOCK_M) {
         const block_m = @min(BLOCK_M, end_row - i);
@@ -327,11 +323,9 @@ fn worker(context: *ThreadContext) void {
         }
     }
 
-    // Finalna synchronizacja wątków
     context.barrier.wait();
 }
 
-// Główny punkt wejścia dla funkcji mnożenia macierzy
 pub export fn zig_mm(
     A: [*]const f32,
     B: [*]const f32,
@@ -340,13 +334,9 @@ pub export fn zig_mm(
     N: usize,
     K: usize,
 ) callconv(.c) void {
-    // Inicjalizacja liczby wątków i optymalnych rozmiarów bloków
     init_guard.call();
-
-    // Użyj odpowiedniej liczby wątków w zależności od rozmiaru macierzy
     var effective_threads: usize = 1;
 
-    // Dynamiczne dostosowanie liczby wątków w zależności od rozmiaru zadania
     const total_elements = M * N * K;
     if (total_elements > 1024 * 1024) { // > 1M elementów
         effective_threads = thread_count;
@@ -356,7 +346,6 @@ pub export fn zig_mm(
         effective_threads = 1; // Małe macierze - single thread
     }
 
-    // Dla małych macierzy - bezpośrednie mnożenie bez tworzenia wątków
     if (effective_threads == 1 or M < 64 or N < 64 or K < 64) {
         for (0..M) |i| {
             for (0..N) |j| {
@@ -370,29 +359,22 @@ pub export fn zig_mm(
         return;
     }
 
-    // Tworzenie bariery dla synchronizacji
     var barrier = Barrier.init(effective_threads);
 
-    // Obliczanie wierszy przypadających na wątek (równomierne rozdzielenie)
     const base_rows_per_thread = M / effective_threads;
     const extra_rows = M % effective_threads;
 
-    // Pozycja startowa dla pierwszego wątku
     var start_row: usize = 0;
 
-    // Alokacja pamięci dla kontekstów i wątków
-    var contexts: [32]ThreadContext = undefined; // użyj maksymalnej liczby wątków jako stałej wielkości tablicy
+    var contexts: [32]ThreadContext = undefined; //
     var threads: [32]Thread = undefined;
     var threads_created: usize = 0;
 
-    // Tworzenie wątków
     for (0..effective_threads) |t| {
-        // Obliczanie zakresu pracy dla tego wątku
         const rows_for_this_thread = base_rows_per_thread +
             if (t < extra_rows) @as(usize, 1) else @as(usize, 0);
         const end_row = start_row + rows_for_this_thread;
 
-        // Konfiguracja kontekstu wątku
         contexts[t] = ThreadContext{
             .id = t,
             .start_row = start_row,
@@ -406,11 +388,8 @@ pub export fn zig_mm(
             .barrier = &barrier,
         };
 
-        // Uruchomienie wątku z obsługą błędów
         threads[t] = Thread.spawn(.{}, worker, .{&contexts[t]}) catch |err| {
             std.debug.print("Error spawning thread {d}: {any}\n", .{ t, err });
-
-            // Dostosuj liczbę efektywnych wątków
             effective_threads = t;
             threads_created = t;
 
@@ -427,20 +406,14 @@ pub export fn zig_mm(
                 }
                 return;
             }
-
-            // Przerwij pętlę tworzenia wątków
             break;
         };
 
         threads_created += 1;
-
-        // Aktualizacja pozycji startowej dla następnego wątku
         start_row = end_row;
     }
 
-    // Jeśli nie udało się stworzyć wszystkich wątków, obsłuż pozostałe wiersze w bieżącym wątku
     if (threads_created < effective_threads) {
-        // Obsłuż pozostałe wiersze w głównym wątku
         for (start_row..M) |i| {
             for (0..N) |j| {
                 var sum: f32 = 0;
@@ -452,7 +425,6 @@ pub export fn zig_mm(
         }
     }
 
-    // Oczekiwanie na zakończenie wszystkich utworzonych wątków
     for (0..threads_created) |t| {
         threads[t].join();
     }
