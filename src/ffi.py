@@ -27,10 +27,10 @@ def get_lib_path(lib_base_name="zigtorch"):
             return path
 
     raise FileNotFoundError(
-        f"Nie znaleziono biblioteki: '{lib_filename}'\n"
-        f"Sprawdzono: {candidates}\n"
-        f"Zbuduj bibliotekę (np. `zig build -Doptimize=ReleaseFast`)\n"
-        f"lub dostosuj ścieżkę w get_lib_path()."
+        f"could find: '{lib_filename}'\n"
+        f"checked: {candidates}\n"
+        f"build by (ex. `zig build -Doptimize=ReleaseFast`)\n"
+        f"or change get_lib_path() in /src/ffi.py "
     )
 
 

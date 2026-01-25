@@ -1,11 +1,9 @@
-// tests/benchmark/mm_bench.zig
 const std = @import("std");
-const mm = @import("../../src/ops/mm.zig");
+const mm = @import("root/src/ops/mm.zig");
 
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
 
-    // Benchmark different matrix sizes
     try stdout.print("Matrix Multiplication Benchmark\n\n", .{});
 
     try benchmark(64, 64, 64, 100);
@@ -19,17 +17,15 @@ fn benchmark(m: usize, n: usize, k: usize, iterations: usize) !void {
     const stdout = std.io.getStdOut().writer();
     const allocator = std.heap.page_allocator;
 
-    // Allocate matrices
     var a = try allocator.alloc(f32, m * k);
     defer allocator.free(a);
 
     const b = try allocator.alloc(f32, k * n);
     defer allocator.free(b);
 
-    const c = try allocator.alloc(f32, m * n); //maybe use const here idk
+    const c = try allocator.alloc(f32, m * n);
     defer allocator.free(c);
 
-    // Initialize with random data
     var prng = std.rand.DefaultPrng.init(0);
     var rand = prng.random();
 
@@ -41,10 +37,8 @@ fn benchmark(m: usize, n: usize, k: usize, iterations: usize) !void {
         b[i] = rand.float(f32);
     }
 
-    // Warmup
     mm.zig_mm(a.ptr, b.ptr, c.ptr, m, n, k);
 
-    // Benchmark
     var timer = try std.time.Timer.start();
     var total_time: u64 = 0;
 
@@ -57,7 +51,6 @@ fn benchmark(m: usize, n: usize, k: usize, iterations: usize) !void {
     const avg_time_ns = total_time / iterations;
     const avg_time_ms = @as(f64, @floatFromInt(avg_time_ns)) / 1_000_000.0;
 
-    // Calculate GFLOPS (2*m*n*k operations)
     const flops = 2 * m * n * k;
     const flops_per_sec = @as(f64, @floatFromInt(flops)) / (@as(f64, @floatFromInt(avg_time_ns)) / 1_000_000_000.0);
     const gflops = flops_per_sec / 1_000_000_000.0;
