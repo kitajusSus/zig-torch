@@ -1,6 +1,6 @@
 // tests/benchmark/mm_bench.zig
 const std = @import("std");
-const mm = @import("../../src/core/ops/mm.zig");
+const mm = @import("../../src/ops/mm.zig");
 
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
@@ -23,10 +23,10 @@ fn benchmark(m: usize, n: usize, k: usize, iterations: usize) !void {
     var a = try allocator.alloc(f32, m * k);
     defer allocator.free(a);
 
-    var b = try allocator.alloc(f32, k * n);
+    const b = try allocator.alloc(f32, k * n);
     defer allocator.free(b);
 
-    var c = try allocator.alloc(f32, m * n); //maybe use const here idk
+    const c = try allocator.alloc(f32, m * n); //maybe use const here idk
     defer allocator.free(c);
 
     // Initialize with random data

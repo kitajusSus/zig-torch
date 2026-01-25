@@ -1,38 +1,228 @@
 const std = @import("std");
 const Thread = std.Thread;
+const Atomic = std.atomic.Value;
 const builtin = @import("builtin");
-// const math = std.math; // Używamy @min/@max z builtins
-const mem = std.mem;
-const debug = std.debug;
 
-const BLOCK_SIZE: usize = 64;
+var BLOCK_M: usize = 256;
+var BLOCK_N: usize = 256;
+var BLOCK_K: usize = 256;
+const MICRO_M = 16;
+const MICRO_N = 16;
+const PREFETCH_DISTANCE_L1 = 64 / @sizeOf(f32);
+const PREFETCH_DISTANCE_L2 = 512 / @sizeOf(f32);
+const VECTOR_WIDTH = if ((builtin.cpu.arch == .x86 or builtin.cpu.arch == .x86_64) and std.Target.x86.featureSetHas(builtin.cpu.features, .avx512f))
+    16
+else if ((builtin.cpu.arch == .x86 or builtin.cpu.arch == .x86_64) and std.Target.x86.featureSetHas(builtin.cpu.features, .avx2))
+    8
+else
+    4;
+
+var thread_count: usize = undefined;
+
+fn initThreadCount() void {
+    thread_count = @min(Thread.getCpuCount() catch 4, 32);
+}
+
+fn determineOptimalBlockSize() void {
+    if ((builtin.cpu.arch == .x86 or builtin.cpu.arch == .x86_64) and std.Target.x86.featureSetHas(builtin.cpu.features, .avx512f)) {
+        BLOCK_M = 384;
+        BLOCK_N = 384;
+        BLOCK_K = 384;
+    } else if (builtin.cpu.arch == .aarch64) {
+        BLOCK_M = 192;
+        BLOCK_N = 256;
+        BLOCK_K = 256;
+    }
+}
+
+fn initGlobals() void {
+    initThreadCount();
+    determineOptimalBlockSize();
+}
+
+var init_guard = std.once(initGlobals);
+
+inline fn prefetchData(addr: [*]const f32, offset: usize, cache_level: u2) void {
+    if (builtin.cpu.arch == .x86 or builtin.cpu.arch == .x86_64) {
+        const locality: u3 = switch (cache_level) {
+            0 => 1,
+            1 => 2,
+            2 => 3,
+            else => 3,
+        };
+
+        switch (locality) {
+            1 => asm volatile ("prefetchnta (%[addr], %[offset], 4)"
+                :
+                : [addr] "r" (addr),
+                  [offset] "r" (offset),
+                : "memory"),
+            2 => asm volatile ("prefetcht2 (%[addr], %[offset], 4)"
+                :
+                : [addr] "r" (addr),
+                  [offset] "r" (offset),
+                : "memory"),
+            else => asm volatile ("prefetcht0 (%[addr], %[offset], 4)"
+                :
+                : [addr] "r" (addr),
+                  [offset] "r" (offset),
+                : "memory"),
+        }
+    }
+}
+
+inline fn microKernel16x16(
+    A: [*]const f32,
+    B: [*]const f32,
+    C: [*]f32,
+    i: usize,
+    j: usize,
+    k: usize,
+    lda: usize,
+    ldb: usize,
+    ldc: usize,
+) void {
+    @setEvalBranchQuota(4000);
+    var c_block: [16][16]f32 = undefined;
+
+    inline for (0..16) |mi| {
+        inline for (0..16) |ni| {
+            c_block[mi][ni] = C[(i + mi) * ldc + j + ni];
+        }
+    }
+
+    var kk: usize = 0;
+    while (kk < MICRO_M) : (kk += 1) {
+        if (kk % 8 == 0 and kk + PREFETCH_DISTANCE_L2 < lda) {
+            prefetchData(A + (i + 0) * lda, k + kk + PREFETCH_DISTANCE_L2, 1);
+            prefetchData(A + (i + 8) * lda, k + kk + PREFETCH_DISTANCE_L2, 1);
+            prefetchData(B + (k + kk + PREFETCH_DISTANCE_L2) * ldb, j, 1);
+        }
+
+        inline for (0..16) |mi| {
+            const a_val = A[(i + mi) * lda + k + kk];
+
+            if (VECTOR_WIDTH == 16) {
+                const a_vec: @Vector(16, f32) = @splat(a_val);
+                var b_vec: @Vector(16, f32) = undefined;
+
+                inline for (0..16) |ni| {
+                    b_vec[ni] = B[(k + kk) * ldb + j + ni];
+                }
+
+                const result = a_vec * b_vec;
+
+                inline for (0..16) |ni| {
+                    c_block[mi][ni] += result[ni];
+                }
+            } else if (VECTOR_WIDTH == 8) {
+                const a_vec: @Vector(8, f32) = @splat(a_val);
+
+                inline for (0..2) |chunk| {
+                    var b_vec: @Vector(8, f32) = undefined;
+                    inline for (0..8) |ni| {
+                        b_vec[ni] = B[(k + kk) * ldb + j + chunk * 8 + ni];
+                    }
+
+                    const result = a_vec * b_vec;
+
+                    inline for (0..8) |ni| {
+                        c_block[mi][chunk * 8 + ni] += result[ni];
+                    }
+                }
+            } else {
+                inline for (0..16) |ni| {
+                    c_block[mi][ni] += a_val * B[(k + kk) * ldb + j + ni];
+                }
+            }
+        }
+    }
+
+    inline for (0..16) |mi| {
+        inline for (0..16) |ni| {
+            C[(i + mi) * ldc + j + ni] = c_block[mi][ni];
+        }
+    }
+}
+
+fn blockMultiply(
+    A: [*]const f32,
+    B: [*]const f32,
+    C: [*]f32,
+    i: usize,
+    j: usize,
+    k: usize,
+    block_m: usize,
+    block_n: usize,
+    block_k: usize,
+    lda: usize,
+    ldb: usize,
+    ldc: usize,
+) void {
+    var ii: usize = 0;
+    while (ii < block_m) : (ii += MICRO_M) {
+        const mi_end = @min(MICRO_M, block_m - ii);
+
+        if (mi_end == MICRO_M) {
+            var jj: usize = 0;
+            while (jj < block_n) : (jj += MICRO_N) {
+                const ni_end = @min(MICRO_N, block_n - jj);
+
+                if (ni_end == MICRO_N) {
+                    var kk: usize = 0;
+                    while (kk < block_k) : (kk += MICRO_M) {
+                        microKernel16x16(A, B, C, i + ii, j + jj, k + kk, lda, ldb, ldc);
+                    }
+                } else {
+                    for (0..mi_end) |mi| {
+                        for (0..ni_end) |ni| {
+                            var sum: f32 = 0;
+                            for (0..block_k) |ki| {
+                                sum += A[(i + ii + mi) * lda + k + ki] * B[(k + ki) * ldb + j + jj + ni];
+                            }
+                            C[(i + ii + mi) * ldc + j + jj + ni] += sum;
+                        }
+                    }
+                }
+            }
+        } else {
+            for (0..mi_end) |mi| {
+                for (0..block_n) |ni| {
+                    var sum: f32 = 0;
+                    for (0..block_k) |ki| {
+                        sum += A[(i + ii + mi) * lda + k + ki] * B[(k + ki) * ldb + j + ni];
+                    }
+                    C[(i + ii + mi) * ldc + j + ni] += sum;
+                }
+            }
+        }
+    }
+}
 
 const Barrier = struct {
-    count: usize,
+    count: Atomic(usize),
     total: usize,
-    phase: usize,
+    phase: Atomic(usize),
 
-    pub fn init(num_threads: usize) Barrier {
+    fn init(count: usize) Barrier {
         return Barrier{
-            .count = 0,
-            .total = num_threads,
-            .phase = 0,
+            .count = Atomic(usize).init(0),
+            .total = count,
+            .phase = Atomic(usize).init(0),
         };
     }
 
-    pub fn wait(self: *Barrier) void {
-        const current_phase = @atomicLoad(usize, &self.phase, .monotonic);
-        const prev_count = @atomicRmw(usize, &self.count, .Add, 1, .acq_rel);
+    fn wait(self: *Barrier) void {
+        const phase = self.phase.load(.monotonic);
+        const prev = self.count.fetchAdd(1, .release);
 
-        if (prev_count + 1 == self.total) {
-            _ = @atomicRmw(usize, &self.count, .Xchg, 0, .monotonic);
-            _ = @atomicRmw(usize, &self.phase, .Add, 1, .release);
+        if (prev + 1 == self.total) {
+            self.count.store(0, .monotonic);
+            self.phase.store(phase + 1, .release);
         } else {
-            while (@atomicLoad(usize, &self.phase, .acquire) == current_phase) {
-                Thread.yield() catch {
-                    // W przypadku błędu yield, można spróbować krótkiego spin-loopa
-                    // lub po prostu kontynuować pętlę.
-                };
+            while (self.phase.load(.acquire) == phase) {
+                Thread.yield() catch {};
+                std.time.sleep(0);
             }
         }
     }
@@ -45,227 +235,199 @@ const ThreadContext = struct {
     A: [*]const f32,
     B: [*]const f32,
     C: [*]f32,
-    full_M: usize,
-    full_N: usize,
-    full_K: usize,
-    barrier: *Barrier,
-};
-
-fn multiplyBlock(
-    A: [*]const f32,
-    B: [*]const f32,
-    C: [*]f32,
-    block_start_row_C: usize,
-    block_start_col_C: usize,
-    block_M_dim: usize,
-    block_N_dim: usize,
-    full_K_dim: usize,
-    full_N_orig: usize,
-    full_K_orig: usize,
-) void {
-    var i_local: usize = 0;
-    while (i_local < block_M_dim) : (i_local += 1) {
-        const current_row_A = block_start_row_C + i_local;
-        var j_local: usize = 0;
-        while (j_local < block_N_dim) : (j_local += 1) {
-            const current_col_B = block_start_col_C + j_local;
-            var sum: f32 = 0.0;
-            var k: usize = 0;
-            while (k < full_K_dim) : (k += 1) {
-                sum += A[current_row_A * full_K_orig + k] * B[k * full_N_orig + current_col_B];
-            }
-            C[current_row_A * full_N_orig + current_col_B] = sum;
-        }
-    }
-}
-
-fn worker(context: *ThreadContext) void {
-    //debug.print("Worker {d}: start_row={d}, end_row={d}\n", .{context.id, context.start_row, context.end_row});
-    const A = context.A;
-    const B = context.B;
-    const C = context.C;
-    const start_row_for_thread = context.start_row;
-    const end_row_for_thread = context.end_row;
-    const N = context.full_N;
-    const K = context.full_K;
-
-    var i_block_start: usize = start_row_for_thread;
-    while (i_block_start < end_row_for_thread) : (i_block_start += BLOCK_SIZE) {
-        const current_block_M = @min(BLOCK_SIZE, end_row_for_thread - i_block_start);
-        var j_block_start: usize = 0;
-        while (j_block_start < N) : (j_block_start += BLOCK_SIZE) {
-            const current_block_N = @min(BLOCK_SIZE, N - j_block_start);
-            multiplyBlock(A, B, C, i_block_start, j_block_start, current_block_M, current_block_N, K, N, K);
-        }
-    }
-}
-
-pub export fn zig_mm(
-    A_ptr: [*]const f32,
-    B_ptr: [*]const f32,
-    C_ptr: [*]f32,
     M: usize,
     N: usize,
     K: usize,
-) callconv(.C) void {
-    //debug.print("zig_mm called: M={d}, N={d}, K={d}\n", .{ M, N, K });
+    barrier: *Barrier,
+};
 
-    const num_elements_C = M * N;
-    if (num_elements_C > 0) {
-        var idx: usize = 0;
-        while (idx < num_elements_C) : (idx += 1) {
-            C_ptr[idx] = 0.0;
+fn worker(context: *ThreadContext) void {
+    const A = context.A;
+    const B = context.B;
+    const C = context.C;
+    const N = context.N;
+    const K = context.K;
+    const start_row = context.start_row;
+    const end_row = context.end_row;
+
+    for (start_row..end_row) |i| {
+        for (0..N) |j| {
+            C[i * N + j] = 0;
         }
     }
 
-    if (M == 0) {
-        //debug.print("M == 0, returning early\n", .{});
-        return;
+    context.barrier.wait();
+
+    var i: usize = start_row;
+    while (i < end_row) : (i += BLOCK_M) {
+        const block_m = @min(BLOCK_M, end_row - i);
+
+        var j: usize = 0;
+        while (j < N) : (j += BLOCK_N) {
+            const block_n = @min(BLOCK_N, N - j);
+
+            var k_: usize = 0;
+            while (k_ < K) : (k_ += BLOCK_K) {
+                const block_k = @min(BLOCK_K, K - k_);
+
+                blockMultiply(
+                    A,
+                    B,
+                    C,
+                    i,
+                    j,
+                    k_,
+                    block_m,
+                    block_n,
+                    block_k,
+                    K,
+                    N,
+                    N,
+                );
+            }
+        }
     }
 
-    const num_threads_initial_request: usize = Thread.getCpuCount() catch 1;
-    const min_rows_for_threading = BLOCK_SIZE * 1;
+    context.barrier.wait();
+}
 
-    var final_num_threads_to_use: usize = 0; // Zadeklaruj bez inicjalizacji
+pub export fn zig_mm(
+    A: [*]const f32,
+    B: [*]const f32,
+    C: [*]f32,
+    M: usize,
+    N: usize,
+    K: usize,
+) callconv(.c) void {
+    init_guard.call();
 
-    if (M < min_rows_for_threading or N < BLOCK_SIZE or K < BLOCK_SIZE) {
-        final_num_threads_to_use = 1;
-    } else if (num_threads_initial_request > M) {
-        final_num_threads_to_use = M;
-    } else if (num_threads_initial_request == 0) {
-        final_num_threads_to_use = 1;
+    var effective_threads: usize = 1;
+
+    const total_elements = M * N * K;
+    if (total_elements > 1024 * 1024) {
+        effective_threads = thread_count;
+    } else if (total_elements > 256 * 256) {
+        effective_threads = @max(thread_count / 2, 2);
     } else {
-        final_num_threads_to_use = num_threads_initial_request;
+        effective_threads = 1;
     }
 
-    //debug.print("Calculated final_num_threads_to_use: {d}\n", .{final_num_threads_to_use});
-
-    if (final_num_threads_to_use <= 1) {
-        //debug.print("Single-threaded execution path chosen.\n", .{});
-        multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K);
+    if (effective_threads == 1 or M < 64 or N < 64 or K < 64) {
+        for (0..M) |i| {
+            for (0..N) |j| {
+                var sum: f32 = 0;
+                for (0..K) |k| {
+                    sum += A[i * K + k] * B[k * N + j];
+                }
+                C[i * N + j] = sum;
+            }
+        }
         return;
     }
 
-    debug.print("Multi-threaded execution path with initially {d} threads\n", .{final_num_threads_to_use});
+    var barrier = Barrier.init(effective_threads);
 
-    const MAX_SUPPORTED_THREADS = 32;
-    if (final_num_threads_to_use > MAX_SUPPORTED_THREADS) {
-        //debug.print("Clamping final_num_threads_to_use from {d} to {d}\n", .{final_num_threads_to_use, MAX_SUPPORTED_THREADS});
-        final_num_threads_to_use = MAX_SUPPORTED_THREADS;
-    }
+    const base_rows_per_thread = M / effective_threads;
+    const extra_rows = M % effective_threads;
 
-    var contexts: [MAX_SUPPORTED_THREADS]ThreadContext = undefined;
-    var threads: [MAX_SUPPORTED_THREADS]Thread = undefined;
+    var start_row: usize = 0;
 
-    var temp_actual_working_threads: usize = 0;
-    var temp_current_start_row_for_calc: usize = 0;
-    const temp_base_rows_per_thread = M / final_num_threads_to_use;
-    const temp_extra_rows = M % final_num_threads_to_use;
+    var contexts: [32]ThreadContext = undefined;
+    var threads: [32]Thread = undefined;
+    var threads_created: usize = 0;
 
-    for (0..final_num_threads_to_use) |i_calc| {
-        const rows_offset_calc: usize = if (i_calc < temp_extra_rows) @as(usize, 1) else @as(usize, 0);
-        const rows_for_this_thread_calc = temp_base_rows_per_thread + rows_offset_calc;
+    for (0..effective_threads) |t| {
+        const rows_for_this_thread = base_rows_per_thread +
+            if (t < extra_rows) @as(usize, 1) else @as(usize, 0);
+        const end_row = start_row + rows_for_this_thread;
 
-        if (rows_for_this_thread_calc == 0) continue;
-
-        const end_row_calc = @min(temp_current_start_row_for_calc + rows_for_this_thread_calc, M);
-        if (temp_current_start_row_for_calc >= end_row_calc) continue;
-
-        temp_actual_working_threads += 1;
-        temp_current_start_row_for_calc = end_row_calc;
-    }
-
-    if (temp_actual_working_threads == 0 and M > 0) {
-        //debug.print("No actual working threads after distribution (M > 0). Forcing single thread.\n", .{});
-        multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K);
-        return;
-    }
-    // Jeśli M == 0, temp_actual_working_threads będzie 0, co jest ok, bo wróciliśmy na początku.
-
-    //debug.print("Actual working threads determined: {d}\n", .{temp_actual_working_threads});
-
-    // Jeśli po kalkulacji wyszło, że tylko 1 wątek ma pracować, idź ścieżką jednowątkową
-    if (temp_actual_working_threads <= 1 and M > 0) { // Dodano M > 0
-        //debug.print("Fallback to single-threaded after calculating actual workers.\n", .{});
-        multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K);
-        return;
-    }
-    if (temp_actual_working_threads == 0) { // Jeśli M było 0, temp_actual_working_threads będzie 0
-        return;
-    }
-
-    // Krok 2: Inicjalizuj barierę z *faktyczną* liczbą pracujących wątków
-    var barrier_storage = Barrier.init(temp_actual_working_threads);
-    const barrier_ptr: *Barrier = &barrier_storage;
-
-    // Krok 3: Uruchom wątki pomocnicze i przygotuj główny wątek
-    var threads_spawned_count: usize = 0; // Licznik faktycznie utworzonych wątków pomocniczych
-    var main_thread_context_idx: usize = 0; // Indeks w contexts dla głównego wątku (ustawimy go)
-    var main_thread_has_work: bool = false;
-
-    var current_start_row_for_dispatch: usize = 0;
-    var current_active_context_idx: usize = 0; // Indeks dla tablicy contexts[] i threads[]
-
-    for (0..final_num_threads_to_use) |original_slot_idx_dispatch| {
-        const rows_offset_dispatch: usize = if (original_slot_idx_dispatch < temp_extra_rows) @as(usize, 1) else @as(usize, 0);
-        const rows_for_this_slot_dispatch = temp_base_rows_per_thread + rows_offset_dispatch;
-        if (rows_for_this_slot_dispatch == 0) continue;
-
-        const actual_start_row_for_dispatch = current_start_row_for_dispatch;
-        const actual_end_row_for_dispatch = @min(actual_start_row_for_dispatch + rows_for_this_slot_dispatch, M);
-        if (actual_start_row_for_dispatch >= actual_end_row_for_dispatch) continue;
-
-        contexts[current_active_context_idx] = ThreadContext{
-            .id = current_active_context_idx,
-            .start_row = actual_start_row_for_dispatch,
-            .end_row = actual_end_row_for_dispatch,
-            .A = A_ptr,
-            .B = B_ptr,
-            .C = C_ptr,
-            .full_M = M,
-            .full_N = N,
-            .full_K = K,
-            .barrier = barrier_ptr,
+        contexts[t] = ThreadContext{
+            .id = t,
+            .start_row = start_row,
+            .end_row = end_row,
+            .A = A,
+            .B = B,
+            .C = C,
+            .M = M,
+            .N = N,
+            .K = K,
+            .barrier = &barrier,
         };
 
-        // Pierwsze `temp_actual_working_threads - 1` kontekstów dla wątków pomocniczych
-        // Ostatni kontekst dla głównego wątku
-        if (current_active_context_idx < temp_actual_working_threads - 1) {
-            //debug.print("Spawning thread (active_ctx_idx {d}) for rows [{d}..{d})\n", .{current_active_context_idx, contexts[current_active_context_idx].start_row, contexts[current_active_context_idx].end_row});
-            if (threads_spawned_count < threads.len) { // Upewnij się, że nie wychodzisz poza tablicę threads
-                threads[threads_spawned_count] = Thread.spawn(.{}, worker, .{&contexts[current_active_context_idx]}) catch |err| {
-                    debug.print("CRITICAL: Failed to spawn thread for active_ctx_idx {d}: {any}. Execution will be single-threaded.\n", .{ current_active_context_idx, err });
-                    multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K);
-                    return; // Awaryjne wyjście do jednowątkowego
-                };
-                threads_spawned_count += 1;
-            } else {
-                debug.print("CRITICAL ERROR: Ran out of space in 'threads' array. This should not happen.\n", .{});
-                multiplyBlock(A_ptr, B_ptr, C_ptr, 0, 0, M, N, K, N, K);
+        threads[t] = Thread.spawn(.{}, worker, .{&contexts[t]}) catch |err| {
+            std.debug.print("Error spawning thread {d}: {any}\n", .{ t, err });
+            effective_threads = t;
+            threads_created = t;
+
+            if (t == 0) {
+                for (0..M) |i| {
+                    for (0..N) |j| {
+                        var sum: f32 = 0;
+                        for (0..K) |k| {
+                            sum += A[i * K + k] * B[k * N + j];
+                        }
+                        C[i * N + j] = sum;
+                    }
+                }
                 return;
             }
-        } else {
-            main_thread_context_idx = current_active_context_idx;
-            main_thread_has_work = true;
-            //debug.print("Main thread will be context {d} for rows [{d}..{d})\n", .{contexts[main_thread_context_idx].id, contexts[main_thread_context_idx].start_row, contexts[main_thread_context_idx].end_row});
+
+            break;
+        };
+
+        threads_created += 1;
+        start_row = end_row;
+    }
+
+    if (threads_created < effective_threads) {
+        for (start_row..M) |i| {
+            for (0..N) |j| {
+                var sum: f32 = 0;
+                for (0..K) |k| {
+                    sum += A[i * K + k] * B[k * N + j];
+                }
+                C[i * N + j] = sum;
+            }
         }
-
-        current_active_context_idx += 1;
-        current_start_row_for_dispatch = actual_end_row_for_dispatch;
-        if (current_active_context_idx >= temp_actual_working_threads) break; // Przydzielono pracę dla wszystkich pracujących wątków
     }
 
-    // Główny wątek wykonuje swoją pracę
-    if (main_thread_has_work) {
-        //debug.print("Main thread (id {d}) actually working on rows [{d}..{d})\n", .{contexts[main_thread_context_idx].id, contexts[main_thread_context_idx].start_row, contexts[main_thread_context_idx].end_row});
-        worker(&contexts[main_thread_context_idx]);
+    for (0..threads_created) |t| {
+        threads[t].join();
     }
+}
 
-    // Dołączanie utworzonych wątków
-    var join_idx: usize = 0;
-    while (join_idx < threads_spawned_count) : (join_idx += 1) {
-        //debug.print("Joining thread for context id {d}\n", .{contexts[join_idx].id}); // Uwaga: contexts[join_idx].id będzie poprawne
-        threads[join_idx].join();
-    }
-    //debug.print("zig_mm finished\n", .{});
+test "zig_mm small correctness 2x3 * 3x2" {
+    var A = [_]f32{ 1, 2, 3, 4, 5, 6 };
+    var B = [_]f32{ 7, 8, 9, 10, 11, 12 };
+    var C = [_]f32{0} ** 4;
+
+    zig_mm(&A, &B, &C, 2, 2, 3);
+
+    try std.testing.expectApproxEqAbs(58, C[0], 1e-4);
+    try std.testing.expectApproxEqAbs(64, C[1], 1e-4);
+    try std.testing.expectApproxEqAbs(139, C[2], 1e-4);
+    try std.testing.expectApproxEqAbs(154, C[3], 1e-4);
+}
+
+test "zig_mm identity 4x4" {
+    var A = [_]f32{
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+    };
+    var B = [_]f32{
+        1,  2,  3,  4,
+        5,  6,  7,  8,
+        9,  10, 11, 12,
+        13, 14, 15, 16,
+    };
+    var C = [_]f32{0} ** 16;
+
+    zig_mm(&A, &B, &C, 4, 4, 4);
+
+    try std.testing.expectApproxEqAbs(1, C[0], 1e-4);
+    try std.testing.expectApproxEqAbs(6, C[5], 1e-4);
+    try std.testing.expectApproxEqAbs(11, C[10], 1e-4);
+    try std.testing.expectApproxEqAbs(16, C[15], 1e-4);
 }

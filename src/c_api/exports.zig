@@ -1,8 +1,11 @@
-// src/c_api/exports.zig
 const std = @import("std");
-const mm = @import("../ops/mm.zig");
 
-// Eksportowana funkcja mnożenia macierzy
+pub const ops = struct {
+    pub const mm = @import("../ops/mm.zig");
+};
+
+const mm = ops.mm;
+
 pub export fn zigtorch_matrix_multiply(
     A_ptr: [*]const f32,
     B_ptr: [*]const f32,
@@ -14,7 +17,6 @@ pub export fn zigtorch_matrix_multiply(
     mm.zig_mm(A_ptr, B_ptr, C_ptr, M, N, K);
 }
 
-// Funkcja dodawania tensorów
 pub export fn zigtorch_tensor_add(
     a_ptr: [*]const f32,
     b_ptr: [*]const f32,
@@ -26,7 +28,6 @@ pub export fn zigtorch_tensor_add(
     }
 }
 
-// Eksportuj informacje o wersji
 pub export fn zigtorch_version() callconv(.C) [*:0]const u8 {
     return "ZigTorch 0.1.0";
 }

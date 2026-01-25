@@ -1,6 +1,6 @@
 const std = @import("std");
 const Thread = std.Thread;
-const Atomic = std.atomic;
+const Atomic = std.atomic.Value;
 const builtin = @import("builtin");
 
 // Block sizes adaptable to cache characteristics
@@ -16,9 +16,9 @@ const PREFETCH_DISTANCE_L2 = 512 / @sizeOf(f32); // Multiple cache lines ahead
 
 // Wykorzystanie najnowszych instrukcji SIMD gdy są dostępne
 // Fix: use hasFeature instead of directly accessing fields
-const VECTOR_WIDTH = if (builtin.cpu.arch.isX86() and std.Target.x86.featureSetHas(builtin.cpu.features, .avx512f))
+const VECTOR_WIDTH = if ((builtin.cpu.arch == .x86 or builtin.cpu.arch == .x86_64) and std.Target.x86.featureSetHas(builtin.cpu.features, .avx512f))
     16
-else if (builtin.cpu.arch.isX86() and std.Target.x86.featureSetHas(builtin.cpu.features, .avx2))
+else if ((builtin.cpu.arch == .x86 or builtin.cpu.arch == .x86_64) and std.Target.x86.featureSetHas(builtin.cpu.features, .avx2))
     8
 else
     4;
@@ -28,7 +28,7 @@ var thread_count: usize = undefined;
 
 // Inicjalizacja liczby wątków na podstawie dostępnych rdzeni
 fn initThreadCount() void {
-    thread_count = std.math.min(Thread.getCpuCount() catch 4, 32); // Większa maksymalna liczba wątków dla maszyn o wielu rdzeniach
+    thread_count = @min(Thread.getCpuCount() catch 4, 32); // Większa maksymalna liczba wątków dla maszyn o wielu rdzeniach
 }
 
 // Function to determine optimal block size based on CPU architecture
@@ -36,12 +36,12 @@ fn determineOptimalBlockSize() void {
     // Default sizes already set as global variables
 
     // Adjust sizes based on CPU architecture if known
-    if (builtin.cpu.arch.isX86() and std.Target.x86.featureSetHas(builtin.cpu.features, .avx512f)) {
+    if ((builtin.cpu.arch == .x86 or builtin.cpu.arch == .x86_64) and std.Target.x86.featureSetHas(builtin.cpu.features, .avx512f)) {
         // Optimize for AVX-512 systems which often have larger caches
         BLOCK_M = 384;
         BLOCK_N = 384;
         BLOCK_K = 384;
-    } else if (builtin.cpu.arch.isAARCH64) {
+    } else if (builtin.cpu.arch == .aarch64) {
         // Slightly different sizes may work better on ARM
         BLOCK_M = 192;
         BLOCK_N = 256;
@@ -49,9 +49,16 @@ fn determineOptimalBlockSize() void {
     }
 }
 
+fn initGlobals() void {
+    initThreadCount();
+    determineOptimalBlockSize();
+}
+
+var init_guard = std.once(initGlobals);
+
 // Improved prefetching with explicit cache level targeting
 inline fn prefetchData(addr: [*]const f32, offset: usize, cache_level: u2) void {
-    if (builtin.cpu.arch.isX86()) {
+    if (builtin.cpu.arch == .x86 or builtin.cpu.arch == .x86_64) {
         // Cache level: 0=L1, 1=L2, 2=L3
         const locality: u3 = switch (cache_level) {
             0 => 1, // NTA (non-temporal)
@@ -60,13 +67,23 @@ inline fn prefetchData(addr: [*]const f32, offset: usize, cache_level: u2) void 
             else => 3,
         };
 
-        asm volatile ("prefetcht%[loc] (%[addr], %[offset], 4)"
-            :
-            : [addr] "r" (addr),
-              [offset] "r" (offset),
-              [loc] "i" (locality),
-            : "memory"
-        );
+        switch (locality) {
+            1 => asm volatile ("prefetchnta (%[addr], %[offset], 4)"
+                :
+                : [addr] "r" (addr),
+                  [offset] "r" (offset),
+                : "memory"),
+            2 => asm volatile ("prefetcht2 (%[addr], %[offset], 4)"
+                :
+                : [addr] "r" (addr),
+                  [offset] "r" (offset),
+                : "memory"),
+            else => asm volatile ("prefetcht0 (%[addr], %[offset], 4)"
+                :
+                : [addr] "r" (addr),
+                  [offset] "r" (offset),
+                : "memory"),
+        }
     }
 }
 
@@ -82,6 +99,7 @@ inline fn microKernel16x16(
     ldb: usize,
     ldc: usize,
 ) void {
+    @setEvalBranchQuota(4000);
     var c_block: [16][16]f32 = undefined;
 
     // Załaduj aktualne wartości z macierzy C do bloku
@@ -228,14 +246,14 @@ const Barrier = struct {
     }
 
     fn wait(self: *Barrier) void {
-        const phase = self.phase.load(.Monotonic);
-        const prev = self.count.fetchAdd(1, .Release);
+        const phase = self.phase.load(.monotonic);
+        const prev = self.count.fetchAdd(1, .release);
 
         if (prev + 1 == self.total) {
-            self.count.store(0, .Monotonic);
-            self.phase.store(phase + 1, .Release);
+            self.count.store(0, .monotonic);
+            self.phase.store(phase + 1, .release);
         } else {
-            while (self.phase.load(.Acquire) == phase) {
+            while (self.phase.load(.acquire) == phase) {
                 // Fix: handle the error with catch
                 Thread.yield() catch {};
             }
@@ -262,7 +280,7 @@ fn worker(context: *ThreadContext) void {
     const A = context.A;
     const B = context.B;
     const C = context.C;
-    const M = context.M;
+    // const M = context.M; // Unused
     const N = context.N;
     const K = context.K;
     const start_row = context.start_row;
@@ -321,10 +339,9 @@ pub export fn zig_mm(
     M: usize,
     N: usize,
     K: usize,
-) callconv(.C) void {
+) callconv(.c) void {
     // Inicjalizacja liczby wątków i optymalnych rozmiarów bloków
-    initThreadCount();
-    determineOptimalBlockSize();
+    init_guard.call();
 
     // Użyj odpowiedniej liczby wątków w zależności od rozmiaru macierzy
     var effective_threads: usize = 1;
@@ -437,8 +454,6 @@ pub export fn zig_mm(
 
     // Oczekiwanie na zakończenie wszystkich utworzonych wątków
     for (0..threads_created) |t| {
-        threads[t].join() catch |err| {
-            std.debug.print("Error joining thread {d}: {any}\n", .{ t, err });
-        };
+        threads[t].join();
     }
 }
