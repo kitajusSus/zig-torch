@@ -1,9 +1,33 @@
+<<<<<<< HEAD
 build/
 zig-out/
 zigtorch.egg-info/
+=======
+# Zig
+zig-out/
+>>>>>>> 10e8fcf87db55722a7a1c254d3ee8b6b4f72bccd
 .zig-cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.dylib
+*.dll
 dist/
 build/
+<<<<<<< HEAD
 docs.md
 roadmap.md
 pimp.py
+=======
+*.egg-info/
+.pytest_cache/
+
+# Misc
+.DS_Store
+zig_install/
+*.tar.xz
+test_output.txt
+>>>>>>> 10e8fcf87db55722a7a1c254d3ee8b6b4f72bccd
