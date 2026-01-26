@@ -1,6 +1,21 @@
-build/
-zigtorch.egg-info/
+# Zig
+zig-out/
 .zig-cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.dylib
+*.dll
 dist/
 build/
-pimp.py
+*.egg-info/
+.pytest_cache/
+
+# Misc
+.DS_Store
+zig_install/
+*.tar.xz
+test_output.txt

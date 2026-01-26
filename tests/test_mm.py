@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from python.zigtorch import matrix_multiply
+from zigtorch import matrix_multiply
 
 @pytest.mark.parametrize(
     "shape_a, shape_b",

@@ -333,7 +333,7 @@ pub export fn zig_mm(
     M: usize,
     N: usize,
     K: usize,
-) callconv(.c) void {
+) callconv(.C) void {
     init_guard.call();
     var effective_threads: usize = 1;
 
@@ -428,4 +428,40 @@ pub export fn zig_mm(
     for (0..threads_created) |t| {
         threads[t].join();
     }
+}
+
+test "zig_mm small correctness 2x3 * 3x2" {
+    var A = [_]f32{ 1, 2, 3, 4, 5, 6 };
+    var B = [_]f32{ 7, 8, 9, 10, 11, 12 };
+    var C = [_]f32{0} ** 4;
+
+    zig_mm(&A, &B, &C, 2, 2, 3);
+
+    try std.testing.expectApproxEqAbs(58, C[0], 1e-4);
+    try std.testing.expectApproxEqAbs(64, C[1], 1e-4);
+    try std.testing.expectApproxEqAbs(139, C[2], 1e-4);
+    try std.testing.expectApproxEqAbs(154, C[3], 1e-4);
+}
+
+test "zig_mm identity 4x4" {
+    var A = [_]f32{
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+    };
+    var B = [_]f32{
+        1,  2,  3,  4,
+        5,  6,  7,  8,
+        9,  10, 11, 12,
+        13, 14, 15, 16,
+    };
+    var C = [_]f32{0} ** 16;
+
+    zig_mm(&A, &B, &C, 4, 4, 4);
+
+    try std.testing.expectApproxEqAbs(1, C[0], 1e-4);
+    try std.testing.expectApproxEqAbs(6, C[5], 1e-4);
+    try std.testing.expectApproxEqAbs(11, C[10], 1e-4);
+    try std.testing.expectApproxEqAbs(16, C[15], 1e-4);
 }
