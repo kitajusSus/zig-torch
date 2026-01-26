@@ -9,7 +9,7 @@ pub fn build(b: *std.Build) void {
         .linkage = .dynamic,
         .version = .{ .major = 0, .minor = 1, .patch = 0 },
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/ops/mm.zig"),
+            .root_source_file = b.path("src/c_api/exports.zig"),
             .target = target,
             .optimize = optimize,
         }),
