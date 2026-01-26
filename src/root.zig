@@ -5,7 +5,6 @@ pub const ops = struct {
     pub const add = @import("ops/add.zig");
 };
 
-// Import C API to ensure exports are generated
 comptime {
     _ = @import("c_api/exports.zig");
 }

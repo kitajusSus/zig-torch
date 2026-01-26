@@ -326,7 +326,7 @@ pub export fn zig_mm(
     M: usize,
     N: usize,
     K: usize,
-) callconv(.C) void {
+) callconv(.c) void {
     init_guard.call();
     var effective_threads: usize = 1;
 
