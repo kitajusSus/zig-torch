@@ -2,7 +2,6 @@ import sys
 import os
 import numpy as np
 
-# Add project root to path so we can import zigtorch if not installed
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "python"))
 
 from zigtorch import matrix_multiply
