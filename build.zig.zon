@@ -1,9 +1,14 @@
 .{
-    .name = .zigtorch,
+    .name = "zigtorch",
     .version = "0.1.0",
     .dependencies = .{},
     .paths = .{
-        "src/mm.zig",
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "python",
+        "LICENSE",
+        "README.md",
     },
     .fingerprint = 0x66b6a88f9e2292e5,
 }
