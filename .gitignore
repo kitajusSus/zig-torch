@@ -1,6 +1,9 @@
 build/
+zig-out/
 zigtorch.egg-info/
 .zig-cache/
 dist/
 build/
+docs.md
+roadmap.md
 pimp.py

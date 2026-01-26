@@ -7,4 +7,3 @@ pub const ops = c_api.ops;
 comptime {
     _ = c_api;
 }
-
