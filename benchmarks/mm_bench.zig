@@ -39,7 +39,7 @@ fn benchmark(m: usize, n: usize, k: usize, iterations: usize) !void {
 
     mm.zig_mm(a.ptr, b.ptr, c.ptr, m, n, k);
 
-    var timer = std.time.Timer.start() catch std.time.Timer{};
+    var timer = try std.time.Timer.start();
     var total_time: u64 = 0;
 
     for (0..iterations) |_| {
