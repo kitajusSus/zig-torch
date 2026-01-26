@@ -2,7 +2,7 @@ const std = @import("std");
 const mm = @import("mm");
 
 pub fn main() !void {
-    const stdout = std.fs.File.stdout();
+    const stdout = std.io.getStdOut().writer();
 
     try stdout.print("Matrix Multiplication Benchmark\n\n", .{});
 
@@ -14,10 +14,10 @@ pub fn main() !void {
 }
 
 fn benchmark(m: usize, n: usize, k: usize, iterations: usize) !void {
-    const stdout = std.Io.;
+    const stdout = std.io.getStdOut().writer();
     const allocator = std.heap.page_allocator;
 
-    var a = try allocator.alloc(f32, m * k);
+    const a = try allocator.alloc(f32, m * k);
     defer allocator.free(a);
 
     const b = try allocator.alloc(f32, k * n);
@@ -26,8 +26,8 @@ fn benchmark(m: usize, n: usize, k: usize, iterations: usize) !void {
     const c = try allocator.alloc(f32, m * n);
     defer allocator.free(c);
 
-    var prng = std.rand.DefaultPrng.init(0);
-    var rand = prng.random();
+    var prng = std.Random.DefaultPrng.init(0);
+    const rand = prng.random();
 
     for (0..a.len) |i| {
         a[i] = rand.float(f32);
