@@ -1,5 +1,5 @@
 const std = @import("std");
-const mm = @import("root/src/ops/mm.zig");
+const mm = @import("mm");
 
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
