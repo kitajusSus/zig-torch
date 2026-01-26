@@ -14,7 +14,6 @@ const MICRO_N = 16;
 const PREFETCH_DISTANCE_L1 = 64 / @sizeOf(f32); // One cache line ahead
 const PREFETCH_DISTANCE_L2 = 512 / @sizeOf(f32); // Multiple cache lines ahead
 
-// Wykorzystanie najnowszych instrukcji SIMD gdy są dostępne
 // Fix: use hasFeature instead of directly accessing fields
 const VECTOR_WIDTH = if ((builtin.cpu.arch == .x86 or builtin.cpu.arch == .x86_64) and std.Target.x86.featureSetHas(builtin.cpu.features, .avx512f))
     16
@@ -26,18 +25,12 @@ else
 // Parametr dostrajania ilości wątków
 var thread_count: usize = undefined;
 
-// Inicjalizacja liczby wątków na podstawie dostępnych rdzeni
 fn initThreadCount() void {
     thread_count = @min(Thread.getCpuCount() catch 4, 32); // Większa maksymalna liczba wątków dla maszyn o wielu rdzeniach
 }
 
-// Function to determine optimal block size based on CPU architecture
 fn determineOptimalBlockSize() void {
-    // Default sizes already set as global variables
-
-    // Adjust sizes based on CPU architecture if known
     if ((builtin.cpu.arch == .x86 or builtin.cpu.arch == .x86_64) and std.Target.x86.featureSetHas(builtin.cpu.features, .avx512f)) {
-        // Optimize for AVX-512 systems which often have larger caches
         BLOCK_M = 384;
         BLOCK_N = 384;
         BLOCK_K = 384;

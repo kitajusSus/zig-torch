@@ -9,7 +9,7 @@ pub export fn zigtorch_matrix_multiply(
     M: usize,
     N: usize,
     K: usize,
-) callconv(.C) void {
+) callconv(.c) void {
     mm.zig_mm(A_ptr, B_ptr, C_ptr, M, N, K);
 }
 
@@ -18,10 +18,10 @@ pub export fn zigtorch_tensor_add(
     b_ptr: [*]const f32,
     result_ptr: [*]f32,
     size: usize,
-) callconv(.C) void {
+) callconv(.c) void {
     add.addMatrices(a_ptr, b_ptr, result_ptr, size);
 }
 
-pub export fn zigtorch_version() callconv(.C) [*:0]const u8 {
+pub export fn zigtorch_version() callconv(.c) [*:0]const u8 {
     return "ZigTorch 0.1.0";
 }

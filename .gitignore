@@ -1,13 +1,10 @@
-# Zig
 zig-out/
 .zig-cache/
 
-# Build artifacts
 build/
 *.o
 *.a
 
-# Python
 __pycache__/
 *.py[cod]
 *$py.class
