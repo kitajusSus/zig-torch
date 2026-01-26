@@ -1,9 +1,11 @@
-build/
-zig-out/
-zigtorch.egg-info/
 # Zig
 zig-out/
 .zig-cache/
+
+# Build artifacts
+build/
+*.o
+*.a
 
 # Python
 __pycache__/
@@ -13,8 +15,6 @@ __pycache__/
 *.dylib
 *.dll
 dist/
-build/
-<<<<<<< HEAD
 docs.md
 roadmap.md
 pimp.py
@@ -26,3 +26,6 @@ pimp.py
 zig_install/
 *.tar.xz
 test_output.txt
+docs.md
+roadmap.md
+pimp.py
