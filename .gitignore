@@ -15,6 +15,9 @@ __pycache__/
 *.dylib
 *.dll
 dist/
+docs.md
+roadmap.md
+pimp.py
 *.egg-info/
 .pytest_cache/
 
