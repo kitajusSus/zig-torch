@@ -1,6 +1,6 @@
 const std = @import("std");
-const mm = @import("../ops/mm.zig");
-const add = @import("../ops/add.zig");
+const mm = @import("mm");
+const add = @import("add");
 
 pub export fn zigtorch_matrix_multiply(
     A_ptr: [*]const f32,

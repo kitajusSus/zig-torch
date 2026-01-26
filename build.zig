@@ -15,6 +15,14 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    // Add imports for the library module so exports.zig can access mm.zig and add.zig
+    lib.root_module.addImport("mm", b.createModule(.{
+        .root_source_file = b.path("src/ops/mm.zig"),
+    }));
+    lib.root_module.addImport("add", b.createModule(.{
+        .root_source_file = b.path("src/ops/add.zig"),
+    }));
+
     b.installArtifact(lib);
 
     const run_tests = b.addTest(.{
