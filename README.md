@@ -130,8 +130,9 @@ Test FFI zakończony.
 
 ##  26.01.2026
 I've changed my mind, now everytime i will update project to the newest version.
->![IMPORTANT]
->with torch
+### zig loses agains numpy with torch
+> ![IMPORTANT]
+> with torch
 
 
 ```bash
@@ -146,4 +147,19 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 1024×512 × 512×256           1.249        0.549       21.713          0.06x          0.03x True
 ```
 
+### zig wins against solo numpy
+> ![IMPORTANT]
+> without TORCH, ONLY NUMPY
+```bash
+python tests/benchmark.py
+Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   Zig vs NumPy   Correct
+---------------------------------------------------------------------------------------------------
+32×32 × 32×32              n/a        0.019        0.018            n/a          1.04x True
+64×64 × 64×64              n/a        0.143        0.055            n/a          2.62x True
+128×128 × 128×128             n/a        1.178        0.358            n/a          3.29x True
+256×256 × 256×256             n/a        9.086        2.778            n/a          3.27x True
+512×512 × 512×512             n/a       69.996       23.019            n/a          3.04x True
+1024×1024 × 1024×1024            n/a      553.027      196.582            n/a          2.81x True
+1024×512 × 512×256             n/a       72.071       22.113            n/a          3.26x True
 
+```
