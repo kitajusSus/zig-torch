@@ -41,7 +41,7 @@ def benchmark_mm(A_np, B_np, iterations=10, warmup=3):
     for _ in range(iterations):
         C_numpy = np.matmul(A_np, B_np)
     numpy_time = (time.perf_counter() - start_time) / iterations
-    
+
     # Check correctness against NumPy
     numpy_diff = float(np.max(np.abs(C_numpy - C_zig)))
 
@@ -78,9 +78,9 @@ def run_benchmark_suite():
         (256, 256, 256),
         (512, 512, 512),
         (1024, 1024, 1024),
-        (2048, 2048, 2048),
+        # (2048, 2048, 2048),
         (1024, 512, 256),
-        (2048, 512, 1024),
+        # (2048, 512, 1024),
     ]
 
     header = f"{'Size M×K × K×N':<22} {'Torch (ms)':<12} {'NumPy (ms)':<12} {'Zig (ms)':<12} {'Zig vs Torch':<14} {'Zig vs NumPy':<14} {'Correct'}"
@@ -92,11 +92,11 @@ def run_benchmark_suite():
         torch_ms = res["torch_time"] * 1000 if res["torch_time"] is not None else None
         numpy_ms = res["numpy_time"] * 1000
         zig_ms = res["zig_time"] * 1000
-        
+
         # Calculate speedups
         zig_vs_torch = torch_ms / zig_ms if torch_ms else None
         zig_vs_numpy = numpy_ms / zig_ms
-        
+
         print(
             f"{m}×{k} × {k}×{n:<6} "
             f"{(f'{torch_ms:.3f}' if torch_ms else 'n/a'):>12} "

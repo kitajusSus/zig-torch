@@ -20,20 +20,20 @@ pub export fn zig_mm(
     }
 
     // Cache-blocked matrix multiplication
-    var i0: usize = 0;
-    while (i0 < M) : (i0 += BLOCK_SIZE) {
-        const i_end = @min(i0 + BLOCK_SIZE, M);
-        
+    var i_0: usize = 0;
+    while (i_0 < M) : (i_0 += BLOCK_SIZE) {
+        const i_end = @min(i_0 + BLOCK_SIZE, M);
+
         var k0: usize = 0;
         while (k0 < K) : (k0 += BLOCK_SIZE) {
             const k_end = @min(k0 + BLOCK_SIZE, K);
-            
+
             var j0: usize = 0;
             while (j0 < N) : (j0 += BLOCK_SIZE) {
                 const j_end = @min(j0 + BLOCK_SIZE, N);
-                
+
                 // Multiply block A[i0:i_end, k0:k_end] × B[k0:k_end, j0:j_end]
-                multiplyBlock(A, B, C, i0, i_end, j0, j_end, k0, k_end, K, N);
+                multiplyBlock(A, B, C, i_0, i_end, j0, j_end, k0, k_end, K, N);
             }
         }
     }
@@ -54,12 +54,12 @@ inline fn multiplyBlock(
     N: usize,
 ) void {
     const VEC_SIZE = 8; // Process 8 floats at a time (256-bit SIMD)
-    
+
     for (i_start..i_end) |i| {
         for (k_start..k_end) |k| {
             const a_val = A[i * K + k];
             const a_vec: @Vector(VEC_SIZE, f32) = @splat(a_val);
-            
+
             // Vectorized inner loop
             var j = j_start;
             while (j + VEC_SIZE <= j_end) : (j += VEC_SIZE) {
@@ -68,22 +68,22 @@ inline fn multiplyBlock(
                 inline for (0..VEC_SIZE) |vi| {
                     b_vec[vi] = B[k * N + j + vi];
                 }
-                
+
                 // Load current C values
                 var c_vec: @Vector(VEC_SIZE, f32) = undefined;
                 inline for (0..VEC_SIZE) |vi| {
                     c_vec[vi] = C[i * N + j + vi];
                 }
-                
+
                 // Multiply-accumulate
                 c_vec += a_vec * b_vec;
-                
+
                 // Store result back to C
                 inline for (0..VEC_SIZE) |vi| {
                     C[i * N + j + vi] = c_vec[vi];
                 }
             }
-            
+
             // Handle remaining elements (scalar)
             while (j < j_end) : (j += 1) {
                 C[i * N + j] += a_val * B[k * N + j];

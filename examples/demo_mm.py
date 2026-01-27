@@ -15,6 +15,13 @@ print("B:\n", B)
 C = matrix_multiply(A, B)
 print("C (result):\n", C)
 
-# Verify
+D = A*B
+
+print("D (result):\n", D)
+
+
 assert np.allclose(C, A @ B, atol=1e-5)
 print("Verification successful!")
+
+
+print(np.abs(D-C))
