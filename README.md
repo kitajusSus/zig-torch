@@ -148,8 +148,8 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 ```
 
 ### zig wins against solo numpy
-> ![IMPORTANT]
-> without TORCH, ONLY NUMPY
+>![IMPORTANT]
+>without TORCH, ONLY NUMPY
 ```bash
 python tests/benchmark.py
 Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   Zig vs NumPy   Correct
