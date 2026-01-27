@@ -4,3 +4,5 @@ zigtorch.egg-info/
 dist/
 build/
 pimp.py
+.venv/
+zig-out/
