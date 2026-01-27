@@ -163,3 +163,33 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 1024×512 × 512×256             n/a       72.071       22.113            n/a          3.26x True
 
 ```
+
+# Roadmap Checklist
+
+## Phase 1: Foundation & Correctness
+- [ ] Fix Boundary Conditions
+- [ ] Integer Overflow Protection
+- [ ] Thread-Safe Global Initialization
+- [ ] Unit Test Framework
+- [ ] Benchmark Comparison Framework
+- [ ] Input Validation Layer
+- [ ] Memory Alignment Utilities
+- [ ] Inline Documentation
+- [ ] API Documentation Website
+
+## Phase 2: Performance Engineering
+- [ ] Dynamic Block Size Selection
+- [ ] Empirical Auto-Tuner
+- [ ] Transpose
+- [ ] Element-wise Operations
+- [ ] Reduction Operations
+- [ ] Built-in Profiler
+
+## Phase 3: API & Usability
+- [ ] Core Tensor Implementation
+- [ ] PyTorch Integration
+- [ ] Example Gallery
+
+## Phase 4: Advanced Features
+- [ ] FP16 Support
+- [ ] INT8 Quantization
