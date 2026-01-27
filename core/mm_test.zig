@@ -1,6 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
-const mm = @import("zigtorch").ops.mm;
+const mm = @import("mm");
 
 test "matrix multiplication 2x2" {
     const a = [_]f32{ 1.0, 2.0, 3.0, 4.0 };

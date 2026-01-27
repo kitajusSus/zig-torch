@@ -1,10 +1,6 @@
 const std = @import("std");
-
-pub const ops = struct {
-    pub const mm = @import("../ops/mm.zig");
-};
-
-const mm = ops.mm;
+const mm = @import("mm");
+const add = @import("add");
 
 pub export fn zigtorch_matrix_multiply(
     A_ptr: [*]const f32,
@@ -23,9 +19,7 @@ pub export fn zigtorch_tensor_add(
     result_ptr: [*]f32,
     size: usize,
 ) callconv(.c) void {
-    for (0..size) |i| {
-        result_ptr[i] = a_ptr[i] + b_ptr[i];
-    }
+    add.addMatrices(a_ptr, b_ptr, result_ptr, size);
 }
 
 pub export fn zigtorch_version() callconv(.c) [*:0]const u8 {
