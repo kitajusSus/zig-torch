@@ -130,3 +130,20 @@ Test FFI zakończony.
 
 ##  26.01.2026
 I've changed my mind, now everytime i will update project to the newest version.
+>![IMPORTANT]
+>with torch
+
+
+```bash
+Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   Zig vs NumPy   Correct
+---------------------------------------------------------------------------------------------------
+32×32 × 32×32            0.003        0.003        0.017          0.21x          0.18x True
+64×64 × 64×64            0.008        0.016        0.085          0.09x          0.19x True
+128×128 × 128×128           6.511        0.627        0.462         14.09x          1.36x True
+256×256 × 256×256           7.226        0.111        2.773          2.61x          0.04x True
+512×512 × 512×512           1.516        0.630       22.216          0.07x          0.03x True
+1024×1024 × 1024×1024          7.648        4.324      187.883          0.04x          0.02x False
+1024×512 × 512×256           1.249        0.549       21.713          0.06x          0.03x True
+```
+
+
