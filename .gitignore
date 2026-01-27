@@ -23,6 +23,4 @@ pimp.py
 zig_install/
 *.tar.xz
 test_output.txt
-docs.md
-roadmap.md
 pimp.py
