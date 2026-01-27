@@ -1,6 +1,9 @@
 import numpy as np
 import pytest
-
+import sys
+import os
+import numpy as np
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "python"))
 from zigtorch import matrix_multiply
 
 @pytest.mark.parametrize(
