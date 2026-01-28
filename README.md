@@ -131,7 +131,11 @@ Test FFI zakończony.
 ##  26.01.2026
 I've changed my mind, now everytime i will update project to the newest version.
 ### zig loses agains numpy with torch
+<<<<<<< HEAD
 > [!IMPORTANT]
+=======
+> ![IMPORTANT]
+>>>>>>> 803966edaf013b7844c16741d8fb03c5c26703ac
 > with torch
 
 
@@ -148,8 +152,13 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 ```
 
 ### zig wins against solo numpy
+<<<<<<< HEAD
 >[!IMPORTANT]
 >without TORCH, ONLY NUMPY
+=======
+> ![IMPORTANT]
+> without TORCH, ONLY NUMPY
+>>>>>>> 803966edaf013b7844c16741d8fb03c5c26703ac
 ```bash
 python tests/benchmark.py
 Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   Zig vs NumPy   Correct
@@ -163,3 +172,212 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 1024×512 × 512×256             n/a       72.071       22.113            n/a          3.26x True
 
 ```
+<<<<<<< HEAD
+=======
+
+# Roadmap Checklist
+
+## Phase 1: Foundation & Correctness
+
+### [ ] Fix Boundary Conditions
+**Inspirational Links & References:**
+- [BLIS micro-kernel handling](https://github.com/flame/blis/blob/master/kernels/zen/3/bli_gemm_zen_asm_d6x8.c#L200-L250)
+- [Eigen block size logic](https://gitlab.com/libeigen/eigen/-/blob/master/Eigen/src/Core/products/GeneralBlockPanelKernel.h#L1850)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Integer Overflow Protection
+**Inspirational Links & References:**
+- [Rust overflow handling](https://doc.rust-lang.org/std/primitive.usize.html#method.checked_mul)
+- [BLIS dimension validation](https://github.com/flame/blis/blob/master/frame/3/bli_l3_check.c)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Thread-Safe Global Initialization
+**Inspirational Links & References:**
+- [Zig thread-local storage](https://ziglang.org/documentation/master/#threadlocal)
+- [NumPy thread-safe config](https://github.com/numpy/numpy/blob/main/numpy/core/src/multiarray/multiarraymodule.c#L4500)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Unit Test Framework
+**Inspirational Links & References:**
+- [Eigen test suite](https://gitlab.com/libeigen/eigen/-/tree/master/test)
+- [NumPy test patterns](https://github.com/numpy/numpy/blob/main/numpy/core/tests/test_multiarray.py)
+- [BLIS test framework](https://github.com/flame/blis/tree/master/testsuite)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Benchmark Comparison Framework
+**Inspirational Links & References:**
+- [NumPy benchmark suite](https://github.com/numpy/numpy/tree/main/benchmarks)
+- [PyTorch benchmarks](https://github.com/pytorch/pytorch/tree/main/benchmarks)
+- [Google Benchmark library](https://github.com/google/benchmark)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Input Validation Layer
+**Inspirational Links & References:**
+- [Zig error handling](https://ziglang.org/documentation/master/#Errors)
+- [Rust validation patterns](https://doc.rust-lang.org/book/ch09-00-error-handling.html)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Memory Alignment Utilities
+**Inspirational Links & References:**
+- [C++ std::aligned_alloc](https://en.cppreference.com/w/cpp/memory/c/aligned_alloc)
+- [NumPy alignment](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flags.html)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Inline Documentation
+**Inspirational Links & References:**
+- [Zig doc comments](https://ziglang.org/documentation/master/#Doc-Comments)
+- [Doxygen style guide](https://www.doxygen.nl/manual/docblocks.html)
+- [Rust documentation guide](https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] API Documentation Website
+**Inspirational Links & References:**
+- [MkDocs Material](https://squidfunk.github.io/mkdocs-material/)
+- [Rust book structure](https://doc.rust-lang.org/book/)
+- [NumPy docs](https://numpy.org/doc/stable/)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+## Phase 2: Performance Engineering
+
+### [ ] Dynamic Block Size Selection
+**Inspirational Links & References:**
+- [Anatomy of High-Performance GEMM (Goto & van de Geijn)](https://www.cs.utexas.edu/users/flame/pubs/GotoTOMS_revision.pdf)
+- [BLIS auto-tuning](https://github.com/flame/blis/wiki/Autotuning)
+- [Halide autoscheduler](https://halide-lang.org/papers/autoscheduler2019.html)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Empirical Auto-Tuner
+**Inspirational Links & References:**
+- [OpenTuner framework](https://github.com/jansel/opentuner)
+- [ATLAS auto-tuning](http://math-atlas.sourceforge.net/)
+- [FFTW planner](http://www.fftw.org/fftw3_doc/Planner-Flags.html)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Transpose
+**Inspirational Links & References:**
+- [Cache-oblivious algorithms](https://en.wikipedia.org/wiki/Cache-oblivious_algorithm)
+- [Efficient matrix transpose (CS:APP)](http://csapp.cs.cmu.edu/3e/labs.html)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Element-wise Operations
+**Inspirational Links & References:**
+- [NumPy ufuncs](https://numpy.org/doc/stable/reference/ufuncs.html)
+- [SLEEF vectorized math](https://sleef.org/)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Reduction Operations
+**Inspirational Links & References:**
+- [CUB reductions](https://nvlabs.github.io/cub/structcub_1_1_device_reduce.html)
+- [Thrust reductions](https://thrust.github.io/doc/group__reductions.html)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+### [ ] Built-in Profiler
+**Inspirational Links & References:**
+- [Chrome Trace Format](https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/)
+- [Tracy Profiler](https://github.com/wolfpld/tracy)
+- [Perfetto](https://perfetto.dev/)
+
+**Notes:**
+<!-- skibidi -->
+---
+
+## Phase 3: API & Usability
+
+### [ ] Core Tensor Implementation
+**Inspirational Links & References:**
+- [PyTorch Tensor API](https://pytorch.org/docs/stable/tensors.html)
+- [NumPy ndarray](https://numpy.org/doc/stable/reference/arrays.ndarray.html)
+- [JAX DeviceArray](https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.DeviceArray.html)
+
+**Notes:**
+<!-- skibidi -->
+
+---
+
+### [ ] PyTorch Integration
+**Inspirational Links & References:**
+- [PyTorch custom functions](https://pytorch.org/docs/stable/notes/extending.html)
+- [JAX pytrees](https://jax.readthedocs.io/en/latest/pytrees.html)
+
+**Notes:**
+<!-- skibidi -->
+
+---
+
+### [ ] Example Gallery
+**Inspirational Links & References:**
+- [PyTorch tutorials](https://pytorch.org/tutorials/)
+- [Scikit-learn examples](https://scikit-learn.org/stable/auto_examples/)
+- [JAX tutorials](https://jax.readthedocs.io/en/latest/notebooks/quickstart.html)
+
+**Notes:**
+<!-- skibidi -->
+
+---
+
+## Phase 4: Advanced Features
+
+### [ ] FP16 Support
+**Inspirational Links & References:**
+- [NVIDIA Mixed Precision](https://docs.nvidia.com/deeplearning/performance/mixed-precision-training/index.html)
+- [ARM FP16 instructions](https://developer.arm.com/documentation/dui0801/latest/A64-Floating-point-Instructions)
+- [Intel AVX-512 FP16](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-avx-512-fp16-instruction-set.html)
+
+**Notes:**
+<!-- skibidi -->
+
+---
+
+### [ ] INT8 Quantization
+**Inspirational Links & References:**
+- [TensorFlow Lite quantization](https://www.tensorflow.org/lite/performance/quantization_spec)
+- [PyTorch quantization](https://pytorch.org/docs/stable/quantization.html)
+- [ONNX Runtime quantization](https://onnxruntime.ai/docs/performance/quantization.html)
+
+**Notes:**
+<!-- skibidi -->
+
+---
+>>>>>>> 803966edaf013b7844c16741d8fb03c5c26703ac
