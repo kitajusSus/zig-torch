@@ -174,8 +174,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [Eigen block size logic](https://gitlab.com/libeigen/eigen/-/blob/master/Eigen/src/Core/products/GeneralBlockPanelKernel.h#L1850)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Integer Overflow Protection
@@ -184,8 +183,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [BLIS dimension validation](https://github.com/flame/blis/blob/master/frame/3/bli_l3_check.c)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Thread-Safe Global Initialization
@@ -194,8 +192,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [NumPy thread-safe config](https://github.com/numpy/numpy/blob/main/numpy/core/src/multiarray/multiarraymodule.c#L4500)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Unit Test Framework
@@ -205,8 +202,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [BLIS test framework](https://github.com/flame/blis/tree/master/testsuite)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Benchmark Comparison Framework
@@ -216,8 +212,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [Google Benchmark library](https://github.com/google/benchmark)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Input Validation Layer
@@ -226,8 +221,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [Rust validation patterns](https://doc.rust-lang.org/book/ch09-00-error-handling.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Memory Alignment Utilities
@@ -236,8 +230,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [NumPy alignment](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flags.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Inline Documentation
@@ -247,8 +240,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [Rust documentation guide](https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] API Documentation Website
@@ -258,8 +250,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [NumPy docs](https://numpy.org/doc/stable/)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ## Phase 2: Performance Engineering
@@ -271,8 +262,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [Halide autoscheduler](https://halide-lang.org/papers/autoscheduler2019.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Empirical Auto-Tuner
@@ -282,8 +272,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [FFTW planner](http://www.fftw.org/fftw3_doc/Planner-Flags.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Transpose
@@ -292,8 +281,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [Efficient matrix transpose (CS:APP)](http://csapp.cs.cmu.edu/3e/labs.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Element-wise Operations
@@ -302,8 +290,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [SLEEF vectorized math](https://sleef.org/)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Reduction Operations
@@ -312,8 +299,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [Thrust reductions](https://thrust.github.io/doc/group__reductions.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ### [ ] Built-in Profiler
@@ -323,8 +309,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [Perfetto](https://perfetto.dev/)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
-
+<!-- skibidi -->
 ---
 
 ## Phase 3: API & Usability
@@ -336,7 +321,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [JAX DeviceArray](https://jax.readthedocs.io/en/latest/_autosummary/jax.numpy.DeviceArray.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
+<!-- skibidi -->
 
 ---
 
@@ -346,7 +331,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [JAX pytrees](https://jax.readthedocs.io/en/latest/pytrees.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
+<!-- skibidi -->
 
 ---
 
@@ -357,7 +342,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [JAX tutorials](https://jax.readthedocs.io/en/latest/notebooks/quickstart.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
+<!-- skibidi -->
 
 ---
 
@@ -370,7 +355,7 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [Intel AVX-512 FP16](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-avx-512-fp16-instruction-set.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
+<!-- skibidi -->
 
 ---
 
@@ -381,6 +366,6 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 - [ONNX Runtime quantization](https://onnxruntime.ai/docs/performance/quantization.html)
 
 **Notes:**
-<!-- Add your notes while building this feature -->
+<!-- skibidi -->
 
 ---
