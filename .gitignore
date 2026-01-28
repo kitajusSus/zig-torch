@@ -18,7 +18,7 @@ __pycache__/
 *.dll
 dist/
 docs.md
-# roadmap.md
+roadmap.md
 pimp.py
 *.egg-info/
 .pytest_cache/
