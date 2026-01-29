@@ -3,8 +3,8 @@ const mm = @import("mm");
 
 pub fn main() !void {
     std.debug.print("Matrix Multiplication Benchmark\n\n", .{});
-
     benchmark(64, 64, 64, 100);
+
     benchmark(128, 128, 128, 50);
     benchmark(256, 256, 256, 20);
     benchmark(512, 512, 512, 10);
