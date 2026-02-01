@@ -97,36 +97,6 @@ rm -rf zig-out/
 
 
 
-## Testing 19.05.2025
-ZIG 0.15.Development
-```bash
-Ładowanie biblioteki z: /home/kitajussus/github/zig-torch/src/libmm.so
-Creating Matrix A (50x50) and B (50x50) type float32...
-
- ZIG MULTIPLYING : !!!!!!!!!!!!!!!!!
-Multiply with zig (50x50) x (50x50) took : 0.713 ms
-
- Multiply with Numpy (for comparison):
-Time for numpy: 2.430 ms
-
-Checking...
-ZIG IS NOT MULTYPLYING ONLY ZEROES!!!! IT IS WORKING
-
- Zig matrix  ( first 5x5 OR LESS):
-[[13.51593   10.569702  13.364006  12.218889   9.840366 ]
- [12.826249   9.629739  14.659329  10.829753  10.374571 ]
- [13.49235   10.976502  14.516691  12.262626  11.237597 ]
- [11.469961   9.874568  11.2643795 10.609412  10.377689 ]
- [12.426827  10.05384   12.000959  11.205995   9.461213 ]]
-Numpy Matrix ( first 5x5 OR LESS):
-[[13.51593   10.569702  13.364005  12.218888   9.840365 ]
- [12.826249   9.629739  14.659329  10.829753  10.374571 ]
- [13.49235   10.976501  14.516692  12.262625  11.2375965]
- [11.469961   9.874568  11.2643795 10.609412  10.377689 ]
- [12.426826  10.053841  12.000959  11.205995   9.461213 ]]
-
-Test FFI zakończony.
-```
 
 ##  26.01.2026
 I've changed my mind, now everytime i will update project to the newest version.
@@ -170,11 +140,16 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 
 ### [ ] Fix Boundary Conditions
 **Inspirational Links & References:**
-- [BLIS micro-kernel handling](https://github.com/flame/blis/blob/master/kernels/zen/3/bli_gemm_zen_asm_d6x8.c#L200-L250)
+- [BLIS micro-kernel handling](https://github.com/flame/blis/tree/master/kernels/zen/3)
 - [Eigen block size logic](https://gitlab.com/libeigen/eigen/-/blob/master/Eigen/src/Core/products/GeneralBlockPanelKernel.h#L1850)
 
 **Notes:**
-<!-- skibidi -->
+I aint gonna rewrite 4k lines just to make that project faster but maybe I can
+there something interesting.
+
+But this eigen block logic is very good documented.
+
+
 ---
 
 ### [ ] Integer Overflow Protection
