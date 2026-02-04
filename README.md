@@ -83,11 +83,7 @@ ex: Creating a New Operation
 ```bash
 # Basic build
 zig build
-
-# Build with optimization for release
-zig build -Drelease-fast
-
-# Run tests
+zig build -Doptimize=ReleaseSafe
 zig build test
 
 # Clean build artifacts
@@ -152,7 +148,7 @@ But this eigen block logic is very good documented.
 
 ---
 
-### [ ] Integer Overflow Protection
+### [x] Integer Overflow Protection
 **Inspirational Links & References:**
 - [Rust overflow handling](https://doc.rust-lang.org/std/primitive.usize.html#method.checked_mul)
 - [BLIS dimension validation](https://github.com/flame/blis/blob/master/frame/3/bli_l3_check.c)

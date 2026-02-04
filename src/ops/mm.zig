@@ -1,9 +1,5 @@
 const std = @import("std");
 const BLOCK_SIZE = 64;
-
-/// Optimized matrix multiplication: C = A × B
-/// A is M×K matrix, B is K×N matrix, C is M×N matrix (row-major order)
-/// Uses cache-blocking and SIMD vectorization for better performance
 pub export fn zig_mm(
     A: [*]const f32,
     B: [*]const f32,
@@ -32,7 +28,6 @@ pub export fn zig_mm(
     }
 }
 
-/// Multiply a block with SIMD optimization
 inline fn multiplyBlock(
     A: [*]const f32,
     B: [*]const f32,

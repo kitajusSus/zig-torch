@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
     const lib = b.addLibrary(.{
         .name = "zigtorch",
         .linkage = .dynamic,
-        .version = .{ .major = 0, .minor = 1, .patch = 0 },
+        .version = .{ .major = 0, .minor = 1, .patch = 1 },
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/c_api/exports.zig"),
             .target = target,
@@ -15,7 +15,6 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    // Add imports for the library module so exports.zig can access mm.zig and add.zig
     lib.root_module.addImport("mm", b.createModule(.{
         .root_source_file = b.path("src/ops/mm.zig"),
     }));
@@ -50,8 +49,6 @@ pub fn build(b: *std.Build) void {
     const core_test_step = b.step("test-core", "Run core tests");
     const run_core_tests = b.addRunArtifact(core_tests);
     core_test_step.dependOn(&run_core_tests.step);
-
-    // Benchmark executable
     const bench_exe = b.addExecutable(.{
         .name = "bench",
         .root_module = b.createModule(.{
