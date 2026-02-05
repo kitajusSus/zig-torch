@@ -1,5 +1,7 @@
 zig-out/
 .zig-cache/
+.python-version
+uv.lock
 
 build/
 
