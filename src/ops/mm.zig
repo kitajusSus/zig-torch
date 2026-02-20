@@ -1,5 +1,5 @@
 const std = @import("std");
-const BLOCK_SIZE = 64;
+const BLOCK_SIZE = 128;
 pub export fn zig_mm(
     A: [*]const f32,
     B: [*]const f32,
