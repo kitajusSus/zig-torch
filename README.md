@@ -84,6 +84,7 @@ ex: Creating a New Operation
 # Basic build
 zig build
 zig build -Doptimize=ReleaseSafe
+zig build -Doptimize=ReleaseFast
 zig build test
 
 # Clean build artifacts
@@ -129,6 +130,12 @@ Size M×K × K×N         Torch (ms)   NumPy (ms)   Zig (ms)     Zig vs Torch   
 1024×512 × 512×256             n/a       72.071       22.113            n/a          3.26x True
 
 ```
+
+## 20.02.2026
+The fun part is that they updated the std.time.Timer()
+
+(ikd)[https://codeberg.org/ziglang/zig/commit/922ab8b8bc3b6dc14da9393b65ca2601f9a82728]
+
 
 # Roadmap Checklist
 
