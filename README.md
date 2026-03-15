@@ -1,5 +1,5 @@
 
-[![sloprank](sloprank.io/badge/kitajusSus/zig-torch.svg)](https://sloprank.io/repo/kitajusSus/zig-torch)
+[![sloprank](zig-torch.svg)](https://sloprank.io/repo/kitajusSus/zig-torch)
 
 
 
