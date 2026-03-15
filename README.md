@@ -1,7 +1,7 @@
-# important 27.02.2025
-Ive changed few things, now I preffere to do firstyly something in zig and later on I will look for options to make bindings to python.
 
-mm.zig is main file with matrix multiplication function. the main problem is that i dont know how to build this, to make it work as a independent library in python, I lost an idea to make "faster pytorch", now im focused to something that can be used with or without pytorch.
+[![sloprank](sloprank.io/badge/kitajusSus/zig-torch.svg)](https://sloprank.io/repo/kitajusSus/zig-torch)
+
+
 
 
 # zig-pytorch
